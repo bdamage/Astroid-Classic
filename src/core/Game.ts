@@ -72,7 +72,6 @@ export class Game {
   private hud: HUD;
   private leaderboard: LeaderboardManager;
   private leaderboardUI: LeaderboardUI;
-  private starfield: Starfield;
 
   public score: number = 0;
   public lives: number = 3;
@@ -89,6 +88,9 @@ export class Game {
     this.soundManager = new SoundManager();
     this.screenShake = new ScreenShake();
     this.starfield = new Starfield(250); // 250 stars
+    this.leaderboard = new LeaderboardManager();
+    this.hud = new HUD(canvas);
+    this.leaderboardUI = new LeaderboardUI(canvas, this.leaderboard);
     this.gameManager = new GameManager(this);
 
     this.resizeCanvas();
@@ -272,12 +274,16 @@ export class Game {
   }
 
   private renderUI(): void {
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.font = "20px Arial";
-    this.ctx.textAlign = "left";
-    this.ctx.fillText(`Score: ${this.score}`, 20, 30);
-    this.ctx.fillText(`Lives: ${this.lives}`, 20, 60);
-    this.ctx.fillText(`Level: ${this.level}`, 20, 90);
+    // Use the new HUD system for enhanced UI
+    this.hud.render({
+      score: this.score,
+      lives: this.lives,
+      level: this.level,
+      weaponSystem: this.gameManager.currentWeaponSystem,
+      waveManager: this.gameManager.currentWaveManager,
+      shieldHealth: this.gameManager.shieldHealth,
+      maxShieldHealth: this.gameManager.maxShieldHealth
+    });
   }
 
   private startNewGame(): void {
@@ -312,6 +318,8 @@ export class Game {
 
   public gameOver(): void {
     this.gameState = GameState.GAME_OVER;
+    // Add score to leaderboard
+    this.leaderboard.addScore(this.score, this.gameManager.currentWave, "Player");
   }
 
   public addScore(points: number): void {

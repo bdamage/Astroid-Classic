@@ -742,4 +742,29 @@ export class GameManager {
       );
     }
   }
+
+  // Public getter methods for HUD
+  public get currentWave(): number {
+    return this.waveManager.getCurrentWave();
+  }
+
+  public get enemiesRemaining(): number {
+    return this.waveManager.getEnemiesRemaining();
+  }
+
+  public get currentWeaponSystem(): WeaponSystem {
+    return this.weaponSystem;
+  }
+
+  public get currentWaveManager(): WaveManager {
+    return this.waveManager;
+  }
+
+  public get shieldHealth(): number | undefined {
+    return this.shield ? this.shield.getHealth() : undefined;
+  }
+
+  public get maxShieldHealth(): number | undefined {
+    return this.shield ? this.shield.getMaxHealth() : undefined;
+  }
 }
