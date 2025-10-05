@@ -17,3 +17,15 @@ Add following enahncements:
 1. Health bar shows red bar with the health status 0-100 
 2. The helathbar should be affected when touching an astroid reduce 4
 3. Add a shield field around the players ship activate using key Q 
+
+
+Add follwoing enhancements:
+
+1. Main menu with options [New Game], [Leaderboard], [Options]
+
+2. Add. Leaderboard list and at game over ask theplayer for their name if they are in rnaks of the current leader board
+
+3. Add some gamification zooming text, when the player has doen killing spree and astroid destruction in x amount in a row
+add also power up mainiac title and other
+
+4. fix the shield reset when player has killed, also fix so the field works as protection and times out
