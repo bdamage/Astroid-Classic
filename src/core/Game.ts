@@ -1,15 +1,25 @@
 import {GameManager} from "../managers/GameManager";
 import {SoundManager} from "../audio/SoundManager";
+import {MusicManager} from "../audio/MusicManager";
 import {ScreenShake} from "../effects/ScreenShake";
 import {Starfield} from "../effects/Starfield";
+import {AchievementDisplay} from "../effects/AchievementDisplay";
 import {HUD} from "../ui/HUD";
-import {LeaderboardManager, LeaderboardUI} from "../systems/LeaderboardManager";
+import {MenuUI} from "../ui/MenuUI";
+import {NameEntryUI} from "../ui/NameEntryUI";
+import {LeaderboardUI} from "../ui/LeaderboardUI";
+import {OptionsUI} from "../ui/OptionsUI";
+import {LeaderboardManager} from "../systems/LeaderboardManager";
+import {AchievementTracker} from "../systems/AchievementTracker";
+import {DifficultyManager} from "../systems/DifficultyManager";
 import type {IGameContext} from "./GameTypes";
+import type {MenuItem} from "../ui/MenuUI";
 import {GameState} from "./GameTypes";
 
 export class InputManager {
   private keys: Set<string> = new Set();
   private keyPressed: Set<string> = new Set();
+  private characterInput: string[] = [];
 
   constructor() {
     this.setupEventListeners();
@@ -21,6 +31,17 @@ export class InputManager {
         this.keyPressed.add(e.code);
       }
       this.keys.add(e.code);
+
+      // Capture character input for name entry
+      if (e.key.length === 1) {
+        this.characterInput.push(e.key);
+      } else if (
+        e.key === "Backspace" ||
+        e.key === "Enter" ||
+        e.key === "Escape"
+      ) {
+        this.characterInput.push(e.key);
+      }
     });
 
     window.addEventListener("keyup", (e) => {
@@ -47,8 +68,13 @@ export class InputManager {
     return this.keyPressed.has(key);
   }
 
+  getCharacterInput(): string[] {
+    return [...this.characterInput];
+  }
+
   clearPressed(): void {
     this.keyPressed.clear();
+    this.characterInput.length = 0;
   }
 }
 
@@ -60,11 +86,18 @@ export class Game implements IGameContext {
   private inputManager: InputManager;
   private gameManager: GameManager;
   private soundManager: SoundManager;
+  private musicManager: MusicManager;
   private screenShake: ScreenShake;
   private starfield: Starfield;
   private hud: HUD;
   private leaderboard: LeaderboardManager;
   private leaderboardUI: LeaderboardUI;
+  private menuUI: MenuUI;
+  private nameEntryUI: NameEntryUI;
+  private optionsUI: OptionsUI;
+  private difficultyManager: DifficultyManager;
+  private achievementTracker: AchievementTracker;
+  private achievementDisplay: AchievementDisplay;
 
   public score: number = 0;
   public lives: number = 3;
@@ -79,15 +112,31 @@ export class Game implements IGameContext {
     this.ctx = context;
     this.inputManager = new InputManager();
     this.soundManager = new SoundManager();
+    this.musicManager = new MusicManager();
     this.screenShake = new ScreenShake();
     this.starfield = new Starfield(250); // 250 stars
     this.leaderboard = new LeaderboardManager();
+    this.difficultyManager = new DifficultyManager();
     this.hud = new HUD(canvas);
-    this.leaderboardUI = new LeaderboardUI(canvas, this.leaderboard);
+    this.leaderboardUI = new LeaderboardUI(canvas, this.ctx);
+    this.menuUI = new MenuUI(canvas);
+    this.nameEntryUI = new NameEntryUI(canvas);
+    this.optionsUI = new OptionsUI(
+      canvas,
+      this.musicManager,
+      this.soundManager,
+      this.difficultyManager
+    );
+    this.achievementTracker = new AchievementTracker();
+    this.achievementDisplay = new AchievementDisplay(canvas);
     this.gameManager = new GameManager(this);
 
+    this.setupMainMenu();
     this.resizeCanvas();
     window.addEventListener("resize", () => this.resizeCanvas());
+
+    // Start menu music
+    this.musicManager.playMenuMusic();
   }
 
   private resizeCanvas(): void {
@@ -98,6 +147,35 @@ export class Game implements IGameContext {
 
   start(): void {
     this.gameLoop(0);
+  }
+
+  private setupMainMenu(): void {
+    const menuItems: MenuItem[] = [
+      {
+        label: "New Game",
+        action: () => this.startNewGame(),
+      },
+      {
+        label: "Leaderboard",
+        action: () => this.showLeaderboard(),
+      },
+      {
+        label: "Options",
+        action: () => this.showOptions(),
+      },
+    ];
+    this.menuUI.setMenu("ASTEROIDS", menuItems);
+  }
+
+  private showLeaderboard(): void {
+    this.gameState = GameState.LEADERBOARD;
+    // Load scores into the UI
+    const scores = this.leaderboard.getEntries();
+    this.leaderboardUI.setScores(scores);
+  }
+
+  private showOptions(): void {
+    this.gameState = GameState.OPTIONS;
   }
 
   private gameLoop(currentTime: number): void {
@@ -137,20 +215,74 @@ export class Game implements IGameContext {
       case GameState.GAME_OVER:
         this.updateGameOver();
         break;
+      case GameState.LEADERBOARD:
+        this.updateLeaderboard();
+        break;
+      case GameState.OPTIONS:
+        this.updateOptions();
+        break;
+      case GameState.NAME_ENTRY:
+        this.updateNameEntry(deltaTime);
+        break;
     }
   }
 
   private updateMenu(): void {
+    if (this.inputManager.isKeyPressed("ArrowUp")) {
+      this.menuUI.moveUp();
+    } else if (this.inputManager.isKeyPressed("ArrowDown")) {
+      this.menuUI.moveDown();
+    } else if (this.inputManager.isKeyPressed("Enter")) {
+      this.menuUI.selectCurrentItem();
+    }
+  }
+
+  private updateLeaderboard(): void {
     if (
-      this.inputManager.isKeyPressed("Space") ||
+      this.inputManager.isKeyPressed("Escape") ||
       this.inputManager.isKeyPressed("Enter")
     ) {
-      this.startNewGame();
+      this.gameState = GameState.MENU;
+      this.setupMainMenu();
+      // Return to menu music
+      this.musicManager.playMenuMusic();
+    }
+  }
+
+  private updateOptions(): void {
+    if (this.inputManager.isKeyPressed("ArrowUp")) {
+      this.optionsUI.moveUp();
+    }
+    if (this.inputManager.isKeyPressed("ArrowDown")) {
+      this.optionsUI.moveDown();
+    }
+    if (this.inputManager.isKeyPressed("Enter")) {
+      this.optionsUI.selectCurrentItem();
+    }
+    if (this.inputManager.isKeyPressed("Escape")) {
+      this.gameState = GameState.MENU;
+      this.setupMainMenu();
+      // Return to menu music
+      this.musicManager.playMenuMusic();
+    }
+  }
+
+  private updateNameEntry(deltaTime: number): void {
+    this.nameEntryUI.update(deltaTime);
+
+    // Handle character input
+    const chars = this.inputManager.getCharacterInput();
+    for (const char of chars) {
+      if (this.nameEntryUI.handleInput(char)) {
+        // Name entry completed or cancelled
+        break;
+      }
     }
   }
 
   private updateGame(deltaTime: number): void {
     this.gameManager.update(deltaTime);
+    this.achievementDisplay.update(deltaTime);
   }
 
   private updateGameOver(): void {
@@ -160,6 +292,9 @@ export class Game implements IGameContext {
     ) {
       this.gameState = GameState.MENU;
       this.resetGame();
+      this.setupMainMenu();
+      // Return to menu music
+      this.musicManager.playMenuMusic();
     }
   }
 
@@ -190,6 +325,15 @@ export class Game implements IGameContext {
       case GameState.GAME_OVER:
         this.renderGameOver();
         break;
+      case GameState.LEADERBOARD:
+        this.renderLeaderboard();
+        break;
+      case GameState.OPTIONS:
+        this.renderOptions();
+        break;
+      case GameState.NAME_ENTRY:
+        this.renderNameEntry();
+        break;
     }
 
     // Restore context after screen shake
@@ -197,33 +341,29 @@ export class Game implements IGameContext {
   }
 
   private renderMenu(): void {
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.font = "48px Arial";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText(
-      "ASTEROIDS",
-      this.canvas.width / 2,
-      this.canvas.height / 2 - 50
-    );
+    this.starfield.render(this.ctx);
+    this.menuUI.render(this.ctx);
+  }
 
-    this.ctx.font = "24px Arial";
-    this.ctx.fillText(
-      "Press SPACE to start",
-      this.canvas.width / 2,
-      this.canvas.height / 2 + 50
-    );
+  private renderLeaderboard(): void {
+    this.starfield.render(this.ctx);
+    this.leaderboardUI.render();
+  }
 
-    this.ctx.font = "16px Arial";
-    this.ctx.fillText(
-      "Arrow Keys or WASD to move, SPACE to shoot, ESC to pause",
-      this.canvas.width / 2,
-      this.canvas.height / 2 + 100
-    );
+  private renderOptions(): void {
+    this.starfield.render(this.ctx);
+    this.optionsUI.render(this.ctx);
+  }
+
+  private renderNameEntry(): void {
+    this.starfield.render(this.ctx);
+    this.nameEntryUI.render(this.ctx);
   }
 
   private renderGame(): void {
     this.gameManager.render(this.ctx);
     this.renderUI();
+    this.achievementDisplay.render(this.ctx);
   }
 
   private renderPauseOverlay(): void {
@@ -292,6 +432,8 @@ export class Game implements IGameContext {
     this.lives = 3;
     this.level = 1;
     this.gameManager.startNewGame();
+    // Start game music
+    this.musicManager.playGameMusic();
   }
 
   private resetGame(): void {
@@ -317,13 +459,46 @@ export class Game implements IGameContext {
   }
 
   public gameOver(): void {
-    this.gameState = GameState.GAME_OVER;
-    // Add score to leaderboard
-    this.leaderboard.addScore(
-      this.score,
-      this.gameManager.currentWave,
-      "Player"
-    );
+    // Check if this is a high score that qualifies for leaderboard
+    const rank = this.leaderboard.getScoreRank(this.score);
+    if (rank > 0) {
+      // High score! Prompt for name entry
+      this.gameState = GameState.NAME_ENTRY;
+      this.nameEntryUI.show(
+        this.score,
+        rank,
+        (name: string) => {
+          // Submit score with name
+          this.leaderboard.addScore(
+            this.score,
+            this.gameManager.currentWave,
+            name
+          );
+          this.gameState = GameState.GAME_OVER;
+        },
+        () => {
+          // Skip name entry
+          this.leaderboard.addScore(
+            this.score,
+            this.gameManager.currentWave,
+            "Anonymous"
+          );
+          this.gameState = GameState.GAME_OVER;
+          // Play game over music
+          this.musicManager.playGameOverMusic();
+        }
+      );
+    } else {
+      // Regular game over
+      this.gameState = GameState.GAME_OVER;
+      this.leaderboard.addScore(
+        this.score,
+        this.gameManager.currentWave,
+        "Player"
+      );
+      // Play game over music
+      this.musicManager.playGameOverMusic();
+    }
   }
 
   public addScore(points: number): void {
@@ -343,5 +518,17 @@ export class Game implements IGameContext {
 
   public get shake(): ScreenShake {
     return this.screenShake;
+  }
+
+  public get achievements(): AchievementTracker {
+    return this.achievementTracker;
+  }
+
+  public get achievementUI(): AchievementDisplay {
+    return this.achievementDisplay;
+  }
+
+  public get difficulty(): DifficultyManager {
+    return this.difficultyManager;
   }
 }

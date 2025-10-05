@@ -65,7 +65,13 @@ export class GameManager {
   }
 
   private spawnInitialAsteroids(): void {
-    const numAsteroids = 4 + this.game.level; // More asteroids each level
+    const settings = this.game.difficulty.getCurrentSettings();
+    const baseNumAsteroids = 4 + this.game.level; // More asteroids each level
+    const numAsteroids = Math.min(
+      Math.round(baseNumAsteroids * settings.asteroidSpawnRate),
+      settings.maxAsteroidsOnScreen
+    );
+
     const safeZone = {
       x: this.game.canvasWidth / 2,
       y: this.game.canvasHeight / 2,
@@ -75,7 +81,8 @@ export class GameManager {
       const asteroid = Asteroid.createRandom(
         this.game.canvasWidth,
         this.game.canvasHeight,
-        safeZone
+        safeZone,
+        settings.asteroidSpeedMultiplier
       );
       this.asteroids.push(asteroid);
     }
@@ -119,7 +126,12 @@ export class GameManager {
       playerPosition
     );
     waveUpdate.enemiesToSpawn.forEach((enemy) => {
-      const newEnemy = new Enemy(enemy.position, enemy.type);
+      const settings = this.game.difficulty.getCurrentSettings();
+      const newEnemy = new Enemy(
+        enemy.position,
+        enemy.type,
+        settings.enemySpeedMultiplier
+      );
       if (this.spaceship) {
         newEnemy.setTarget(this.spaceship.position);
       }
@@ -179,21 +191,36 @@ export class GameManager {
       (missile) => missile.active
     );
 
-    // Remove shield if depleted
-    if (this.shield && this.shield.getHealth() <= 0) {
+    // Remove shield if depleted or expired
+    if (
+      this.shield &&
+      (this.shield.getHealth() <= 0 || this.shield.isExpired())
+    ) {
       this.shield = null;
     }
 
-    // Power-up spawning - more frequent spawning
+    // Power-up spawning - difficulty adjusted
     this.powerUpSpawnTimer += deltaTime;
-    if (this.powerUpSpawnTimer >= 7000) {
-      // Spawn power-up every 7 seconds (more frequent)
+    const settings = this.game.difficulty.getCurrentSettings();
+    const spawnInterval = 7000 / settings.powerUpSpawnRate; // Faster spawn on easier difficulties
+    if (this.powerUpSpawnTimer >= spawnInterval) {
       this.spawnPowerUp();
       this.powerUpSpawnTimer = 0;
     }
 
     // Check collisions
     this.checkCollisions();
+
+    // Check wave completion
+    if (this.enemies.length === 0 && this.waveManager.isWaveComplete()) {
+      const bonusScore = this.waveManager.completeWave();
+      const currentWave = this.waveManager.getCurrentWave();
+
+      // Show wave completion achievement
+      const achievement = this.game.achievements.onWaveCleared(currentWave);
+      this.game.achievementUI.showAchievement(achievement);
+      this.game.addScore(achievement.points + bonusScore);
+    }
 
     // Check win condition
     if (this.asteroids.length === 0) {
@@ -246,6 +273,20 @@ export class GameManager {
     if (input.isKeyPressed("KeyX")) {
       this.launchHomingMissile();
     }
+
+    // Activate shield manually
+    if (input.isKeyPressed("KeyQ")) {
+      this.activateShield();
+    }
+  }
+
+  private activateShield(): void {
+    if (!this.spaceship || !this.spaceship.active || this.shield) return;
+
+    // Create shield with longer duration for manual activation
+    this.shield = new Shield(this.spaceship, 20000); // 20 seconds for manual activation
+    this.game.sound.playSound("shield", 0.5);
+    this.particleSystem.createPowerUpEffect(this.spaceship.position, "#00ffff");
   }
 
   private spawnPowerUp(): void {
@@ -328,7 +369,7 @@ export class GameManager {
     switch (config.type) {
       case "shield":
         if (!this.shield) {
-          this.shield = new Shield(this.spaceship);
+          this.shield = new Shield(this.spaceship, 15000); // 15 second duration
           this.game.sound.playSound("shield", 0.5);
           this.particleSystem.createPowerUpEffect(
             this.spaceship.position,
@@ -464,10 +505,28 @@ export class GameManager {
         const asteroid = this.asteroids[asteroidIndex];
 
         if (bullet.checkCollision(asteroid)) {
-          const score = asteroid.getScore();
+          const baseScore = asteroid.getScore();
+          const score = this.game.difficulty.getScoreValue(baseScore);
 
           // Add score
           this.game.addScore(score);
+
+          // Check for achievements on kill
+          const achievement = this.game.achievements.onKill(Date.now());
+          if (achievement) {
+            this.game.achievementUI.showAchievement(achievement);
+            this.game.addScore(achievement.points);
+          }
+
+          // Show kill streak counter if applicable
+          const killStreak = this.game.achievements.getCurrentKillStreak();
+          if (killStreak >= 3) {
+            this.game.achievementUI.showKillStreakCounter(
+              killStreak,
+              asteroid.position.x,
+              asteroid.position.y
+            );
+          }
 
           // Add floating score text
           this.floatingTextManager.addScoreText(asteroid.position, score);
@@ -490,12 +549,13 @@ export class GameManager {
           }
 
           // Create fragments
-          const fragments = asteroid.split();
+          const settings = this.game.difficulty.getCurrentSettings();
+          const fragments = asteroid.split(settings.asteroidSpeedMultiplier);
           this.asteroids.splice(asteroidIndex, 1); // Remove original asteroid
           this.asteroids.push(...fragments); // Add fragments
 
-          // Chance to spawn power-up when asteroid is destroyed (15% chance)
-          if (Math.random() < 0.15) {
+          // Chance to spawn power-up when asteroid is destroyed (difficulty adjusted)
+          if (this.game.difficulty.shouldSpawnPowerUp(0.15)) {
             this.spawnPowerUpAt(asteroid.position.x, asteroid.position.y);
           }
 
@@ -540,6 +600,13 @@ export class GameManager {
 
           // Play power-up sound
           this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
+
+          // Check for power-up achievements
+          const achievement = this.game.achievements.onPowerUpCollected();
+          if (achievement) {
+            this.game.achievementUI.showAchievement(achievement);
+            this.game.addScore(achievement.points);
+          }
 
           // Screen shake for feedback
           this.game.shake.shake(3, 150);
@@ -590,7 +657,27 @@ export class GameManager {
         if (bullet.checkCollision(enemy)) {
           if (enemy.takeDamage()) {
             // Enemy destroyed
-            this.game.addScore(enemy.getScore());
+            const baseScore = enemy.getScore();
+            const score = this.game.difficulty.getScoreValue(baseScore);
+            this.game.addScore(score);
+
+            // Check for achievements on enemy kill
+            const achievement = this.game.achievements.onKill(Date.now());
+            if (achievement) {
+              this.game.achievementUI.showAchievement(achievement);
+              this.game.addScore(achievement.points);
+            }
+
+            // Show kill streak counter if applicable
+            const killStreak = this.game.achievements.getCurrentKillStreak();
+            if (killStreak >= 3) {
+              this.game.achievementUI.showKillStreakCounter(
+                killStreak,
+                enemy.position.x,
+                enemy.position.y
+              );
+            }
+
             this.floatingTextManager.addScoreText(
               enemy.position,
               enemy.getScore()
@@ -633,7 +720,8 @@ export class GameManager {
         const asteroid = this.asteroids[asteroidIndex];
 
         if (missile.checkCollision(asteroid)) {
-          const score = asteroid.getScore() * 2; // Bonus for homing missile
+          const baseScore = asteroid.getScore() * 2; // Bonus for homing missile
+          const score = this.game.difficulty.getScoreValue(baseScore);
           this.game.addScore(score);
           this.floatingTextManager.addScoreText(asteroid.position, score);
           this.particleSystem.createExplosion(
@@ -643,7 +731,8 @@ export class GameManager {
             "bright"
           );
 
-          const fragments = asteroid.split();
+          const settings = this.game.difficulty.getCurrentSettings();
+          const fragments = asteroid.split(settings.asteroidSpeedMultiplier);
           this.asteroids.splice(asteroidIndex, 1);
           this.asteroids.push(...fragments);
           this.homingMissiles.splice(missileIndex, 1);
@@ -665,7 +754,8 @@ export class GameManager {
         if (missile.checkCollision(enemy)) {
           if (enemy.takeDamage(2)) {
             // Homing missiles do more damage
-            const score = enemy.getScore() * 2;
+            const baseScore = enemy.getScore() * 2;
+            const score = this.game.difficulty.getScoreValue(baseScore);
             this.game.addScore(score);
             this.floatingTextManager.addScoreText(enemy.position, score);
             this.particleSystem.createEnemyExplosion(
@@ -706,7 +796,14 @@ export class GameManager {
 
       this.spaceship.destroy();
       this.spaceship = null;
+
+      // Reset shield on death
+      this.shield = null;
+
       this.game.loseLife();
+
+      // Reset achievement streaks on death
+      this.game.achievements.resetStreaks();
 
       if (this.game.lives <= 0) {
         // Play game over sound

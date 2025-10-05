@@ -108,7 +108,7 @@ export class Asteroid extends GameObject {
   }
 
   // Split asteroid into smaller pieces
-  split(): Asteroid[] {
+  split(speedMultiplier: number = 1.0): Asteroid[] {
     if (this.size === AsteroidSize.SMALL) {
       return []; // Small asteroids don't split
     }
@@ -122,7 +122,8 @@ export class Asteroid extends GameObject {
 
     for (let i = 0; i < numFragments; i++) {
       // Create random velocity for fragment
-      const speed = 50 + Math.random() * 100;
+      const baseSpeed = 50 + Math.random() * 100;
+      const speed = baseSpeed * speedMultiplier;
       const angle = Math.random() * Math.PI * 2;
       const fragmentVelocity = Vector2Utils.fromAngle(angle, speed);
 
@@ -152,7 +153,8 @@ export class Asteroid extends GameObject {
   static createRandom(
     canvasWidth: number,
     canvasHeight: number,
-    safeZone?: Vector2
+    safeZone?: Vector2,
+    speedMultiplier: number = 1.0
   ): Asteroid {
     let position: Vector2;
 
@@ -164,7 +166,8 @@ export class Asteroid extends GameObject {
       };
     } while (safeZone && Vector2Utils.distance(position, safeZone) < 100);
 
-    const speed = 30 + Math.random() * 70;
+    const baseSpeed = 30 + Math.random() * 70;
+    const speed = baseSpeed * speedMultiplier;
     const angle = Math.random() * Math.PI * 2;
     const velocity = Vector2Utils.fromAngle(angle, speed);
 

@@ -28,7 +28,7 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     speed: 120,
     score: 100,
     color: "#ffff00",
-    size: 8,
+    size: 16,
     fireRate: 2000,
     aggressiveness: 0.7,
   },
@@ -38,7 +38,7 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     speed: 80,
     score: 200,
     color: "#ff6600",
-    size: 12,
+    size: 18,
     fireRate: 1500,
     aggressiveness: 0.8,
   },
@@ -48,7 +48,7 @@ export const ENEMY_CONFIGS: Record<EnemyType, EnemyConfig> = {
     speed: 50,
     score: 300,
     color: "#ff0000",
-    size: 16,
+    size: 24,
     fireRate: 3000,
     aggressiveness: 0.5,
   },
@@ -64,17 +64,21 @@ export class Enemy extends GameObject {
   private wanderTime: number = 0;
   private thrustPhase: number = 0;
 
-  constructor(position: Vector2, type: EnemyType) {
+  constructor(
+    position: Vector2,
+    type: EnemyType,
+    speedMultiplier: number = 1.0
+  ) {
     const config = ENEMY_CONFIGS[type];
     super(position, config.size);
 
     this.enemyType = type;
-    this.config = config;
+    this.config = {...config, speed: config.speed * speedMultiplier}; // Apply speed multiplier
     this.health = config.health;
 
     // Random initial rotation
     this.rotation = Math.random() * Math.PI * 2;
-    this.velocity = Vector2Utils.fromAngle(this.rotation, config.speed);
+    this.velocity = Vector2Utils.fromAngle(this.rotation, this.config.speed);
   }
 
   update(deltaTime: number, canvasWidth: number, canvasHeight: number): void {

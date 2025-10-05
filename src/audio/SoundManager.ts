@@ -524,8 +524,16 @@ export class SoundManager {
     this.masterVolume = Math.max(0, Math.min(1, volume));
   }
 
+  public getMasterVolume(): number {
+    return this.masterVolume;
+  }
+
   public setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
+  }
+
+  public getEnabled(): boolean {
+    return this.isEnabled;
   }
 
   public isAudioEnabled(): boolean {

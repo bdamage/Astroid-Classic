@@ -87,7 +87,7 @@ export class WaveManager {
     playerPosition?: Vector2
   ): Vector2 {
     const margin = 50;
-    const minDistanceFromPlayer = 400;
+    const minDistanceFromPlayer = 200;
 
     let attempts = 0;
     const maxAttempts = 20;
@@ -158,7 +158,7 @@ export class WaveManager {
     let enemiesLeft = baseEnemies;
 
     // Wave 1-3: Mostly scouts
-    if (waveNumber <= 3) {
+    if (waveNumber <= 2) {
       const scouts = Math.ceil(enemiesLeft * 0.8);
       const fighters = enemiesLeft - scouts;
 
@@ -179,7 +179,7 @@ export class WaveManager {
       }
     }
     // Wave 4-7: Mix of scouts and fighters
-    else if (waveNumber <= 7) {
+    else if (waveNumber <= 4) {
       const scouts = Math.ceil(enemiesLeft * 0.5);
       const fighters = Math.ceil(enemiesLeft * 0.4);
       const bombers = Math.max(1, enemiesLeft - scouts - fighters);

@@ -82,6 +82,18 @@ export class LeaderboardManager {
     return rank === -1 ? this.entries.length + 1 : rank + 1;
   }
 
+  getScoreRank(score: number): number {
+    // Returns the rank if the score qualifies for leaderboard, 0 if it doesn't
+    const rank = this.getRank(score);
+    if (
+      this.entries.length < LeaderboardManager.MAX_ENTRIES ||
+      rank <= LeaderboardManager.MAX_ENTRIES
+    ) {
+      return rank;
+    }
+    return 0; // Doesn't qualify for leaderboard
+  }
+
   getEntries(): LeaderboardEntry[] {
     return [...this.entries]; // Return copy to prevent external modification
   }
