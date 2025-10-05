@@ -1,0 +1,11 @@
+Todo:
+
+Add following:
+Power-ups: shields, hyperspace jump, slow motion, homing misile.
+Leaderboard system 
+Shooting sound should be laser sound
+And satisfying sound effects
+
+Add some enemies that comes wave in different waves
+Add to HUD interface a wave counter
+Bright explosions, screen shakes, particle effects.
