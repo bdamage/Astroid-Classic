@@ -1,6 +1,6 @@
-import { Bullet } from '../entities/Bullet';
-import { PowerUpType } from '../entities/PowerUp';
-import type { Vector2 } from '../utils/Vector2';
+import {Bullet} from "../entities/Bullet";
+import {PowerUpType} from "../entities/PowerUp";
+import type {Vector2} from "../utils/Vector2";
 
 export interface ActivePowerUp {
   type: PowerUpType;
@@ -14,7 +14,7 @@ export class WeaponSystem {
 
   update(deltaTime: number): void {
     // Update power-up timers
-    this.activePowerUps = this.activePowerUps.filter(powerUp => {
+    this.activePowerUps = this.activePowerUps.filter((powerUp) => {
       powerUp.timeRemaining -= deltaTime;
       return powerUp.timeRemaining > 0;
     });
@@ -42,13 +42,13 @@ export class WeaponSystem {
     if (this.hasPowerUp(PowerUpType.TRIPLE_SHOT)) {
       // Fire three bullets
       bullets.push(new Bullet(position, direction - 0.2)); // Left
-      bullets.push(new Bullet(position, direction));       // Center
+      bullets.push(new Bullet(position, direction)); // Center
       bullets.push(new Bullet(position, direction + 0.2)); // Right
     } else if (this.hasPowerUp(PowerUpType.SPREAD_SHOT)) {
       // Fire five bullets in spread pattern
       const spreadAngle = 0.15;
       for (let i = -2; i <= 2; i++) {
-        bullets.push(new Bullet(position, direction + (i * spreadAngle)));
+        bullets.push(new Bullet(position, direction + i * spreadAngle));
       }
     } else {
       // Normal single shot
@@ -57,7 +57,7 @@ export class WeaponSystem {
 
     // Apply power shot effect if active
     if (this.hasPowerUp(PowerUpType.POWER_SHOT)) {
-      bullets.forEach(bullet => {
+      bullets.forEach((bullet) => {
         bullet.setPiercing(true);
         bullet.setDamage(2);
       });
@@ -68,17 +68,19 @@ export class WeaponSystem {
 
   addPowerUp(type: PowerUpType, duration: number): void {
     // Remove existing power-up of the same type
-    this.activePowerUps = this.activePowerUps.filter(powerUp => powerUp.type !== type);
-    
+    this.activePowerUps = this.activePowerUps.filter(
+      (powerUp) => powerUp.type !== type
+    );
+
     // Add new power-up
     this.activePowerUps.push({
       type,
-      timeRemaining: duration
+      timeRemaining: duration,
     });
   }
 
   hasPowerUp(type: PowerUpType): boolean {
-    return this.activePowerUps.some(powerUp => powerUp.type === type);
+    return this.activePowerUps.some((powerUp) => powerUp.type === type);
   }
 
   getActivePowerUps(): ActivePowerUp[] {
@@ -87,11 +89,14 @@ export class WeaponSystem {
 
   getSoundForCurrentWeapon(): string {
     if (this.hasPowerUp(PowerUpType.RAPID_FIRE)) {
-      return 'rapidFire';
-    } else if (this.hasPowerUp(PowerUpType.TRIPLE_SHOT) || this.hasPowerUp(PowerUpType.SPREAD_SHOT)) {
-      return 'tripleFire';
+      return "rapidFire";
+    } else if (
+      this.hasPowerUp(PowerUpType.TRIPLE_SHOT) ||
+      this.hasPowerUp(PowerUpType.SPREAD_SHOT)
+    ) {
+      return "tripleFire";
     }
-    return 'shoot';
+    return "shoot";
   }
 
   reset(): void {

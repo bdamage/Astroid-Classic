@@ -38,21 +38,33 @@ export class Bullet extends GameObject {
     if (!this.active) return;
 
     ctx.save();
-    
+
     if (this.isPiercing) {
       // Draw glowing power bullet
       ctx.fillStyle = "#ff00ff";
       ctx.shadowColor = "#ff00ff";
       ctx.shadowBlur = 8;
       ctx.beginPath();
-      ctx.arc(this.position.x, this.position.y, this.radius * 1.5, 0, Math.PI * 2);
+      ctx.arc(
+        this.position.x,
+        this.position.y,
+        this.radius * 1.5,
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
-      
+
       // Inner core
       ctx.shadowBlur = 0;
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(this.position.x, this.position.y, this.radius * 0.7, 0, Math.PI * 2);
+      ctx.arc(
+        this.position.x,
+        this.position.y,
+        this.radius * 0.7,
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
     } else {
       // Normal bullet
@@ -61,7 +73,7 @@ export class Bullet extends GameObject {
       ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
     }
-    
+
     ctx.restore();
   }
 

@@ -127,7 +127,8 @@ export class GameManager {
 
     // Power-up spawning
     this.powerUpSpawnTimer += deltaTime;
-    if (this.powerUpSpawnTimer >= 15000) { // Spawn power-up every 15 seconds
+    if (this.powerUpSpawnTimer >= 15000) {
+      // Spawn power-up every 15 seconds
       this.spawnPowerUp();
       this.powerUpSpawnTimer = 0;
     }
@@ -186,39 +187,52 @@ export class GameManager {
   private spawnPowerUp(): void {
     // Random spawn chance to balance gameplay
     if (Math.random() > 0.7) return; // 30% chance to spawn
-    
+
     // Random power-up type
-    const types = ['rapidFire', 'tripleShot', 'spreadShot', 'powerShot'] as const;
+    const types = [
+      "rapidFire",
+      "tripleShot",
+      "spreadShot",
+      "powerShot",
+    ] as const;
     const randomType = types[Math.floor(Math.random() * types.length)];
-    
+
     // Spawn away from player to avoid instant pickup
     const margin = 150;
     const x = Math.random() * (this.game.canvasWidth - margin * 2) + margin;
     const y = Math.random() * (this.game.canvasHeight - margin * 2) + margin;
-    
+
     // Ensure minimum distance from player
     if (this.spaceship) {
       const dx = x - this.spaceship.position.x;
       const dy = y - this.spaceship.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (distance < 200) {
         // Try again with better positioning
         const angle = Math.random() * Math.PI * 2;
         const spawnDistance = 250 + Math.random() * 150;
-        const newX = this.spaceship.position.x + Math.cos(angle) * spawnDistance;
-        const newY = this.spaceship.position.y + Math.sin(angle) * spawnDistance;
-        
+        const newX =
+          this.spaceship.position.x + Math.cos(angle) * spawnDistance;
+        const newY =
+          this.spaceship.position.y + Math.sin(angle) * spawnDistance;
+
         // Keep within bounds
-        const clampedX = Math.max(50, Math.min(this.game.canvasWidth - 50, newX));
-        const clampedY = Math.max(50, Math.min(this.game.canvasHeight - 50, newY));
-        
-        this.powerUps.push(new PowerUp({ x: clampedX, y: clampedY }, randomType));
+        const clampedX = Math.max(
+          50,
+          Math.min(this.game.canvasWidth - 50, newX)
+        );
+        const clampedY = Math.max(
+          50,
+          Math.min(this.game.canvasHeight - 50, newY)
+        );
+
+        this.powerUps.push(new PowerUp({x: clampedX, y: clampedY}, randomType));
       } else {
-        this.powerUps.push(new PowerUp({ x, y }, randomType));
+        this.powerUps.push(new PowerUp({x, y}, randomType));
       }
     } else {
-      this.powerUps.push(new PowerUp({ x, y }, randomType));
+      this.powerUps.push(new PowerUp({x, y}, randomType));
     }
   }
 
@@ -226,19 +240,23 @@ export class GameManager {
     if (!this.spaceship) return;
 
     const bulletPosition = this.spaceship.getFrontPosition();
-    const newBullets = this.weaponSystem.shoot(bulletPosition, this.spaceship.rotation);
-    
+    const newBullets = this.weaponSystem.shoot(
+      bulletPosition,
+      this.spaceship.rotation
+    );
+
     // Add bullets to the game
     this.bullets.push(...newBullets);
 
     // Play appropriate sound
     const soundName = this.weaponSystem.getSoundForCurrentWeapon();
     this.game.sound.playSound(soundName, 0.4, 0.9 + Math.random() * 0.2);
-    
+
     // Screen shake
     const shakeIntensity = newBullets.length > 1 ? 2 : 1;
     this.game.shake.shake(shakeIntensity, 50);
-  }  private checkCollisions(): void {
+  }
+  private checkCollisions(): void {
     if (!this.spaceship) return;
 
     // Spaceship vs Asteroids
@@ -305,26 +323,30 @@ export class GameManager {
     }
 
     // Spaceship vs PowerUps
-    for (let powerUpIndex = this.powerUps.length - 1; powerUpIndex >= 0; powerUpIndex--) {
+    for (
+      let powerUpIndex = this.powerUps.length - 1;
+      powerUpIndex >= 0;
+      powerUpIndex--
+    ) {
       const powerUp = this.powerUps[powerUpIndex];
-      
+
       if (this.spaceship.checkCollision(powerUp)) {
         // Apply power-up effect
         const config = powerUp.getConfig();
         this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
-        
+
         // Add floating text
         this.floatingTextManager.addPowerUpText(powerUp.position, config.name);
-        
+
         // Create pickup effect
         this.particleSystem.createExplosion(powerUp.position, config.color, 8);
-        
+
         // Play power-up sound
         this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
-        
+
         // Screen shake for feedback
         this.game.shake.shake(3, 150);
-        
+
         // Remove power-up
         this.powerUps.splice(powerUpIndex, 1);
       }

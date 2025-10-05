@@ -60,20 +60,20 @@ export class SoundManager {
 
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
-      
+
       // Multi-layered laser sound
       const baseFreq = 1200;
-      const sweepFreq = baseFreq - (t * 800); // Frequency sweep down
+      const sweepFreq = baseFreq - t * 800; // Frequency sweep down
       const harmonicFreq = sweepFreq * 1.5; // Harmonic
-      
+
       // Sharp attack, quick decay
       const envelope = Math.exp(-t * 15) * (1 - Math.exp(-t * 50));
-      
+
       // Add some harmonic content for richness
       const fundamental = Math.sin(2 * Math.PI * sweepFreq * t) * 0.7;
       const harmonic = Math.sin(2 * Math.PI * harmonicFreq * t) * 0.3;
       const noise = (Math.random() * 2 - 1) * 0.1 * Math.exp(-t * 30); // Quick noise burst
-      
+
       data[i] = (fundamental + harmonic + noise) * envelope * 0.4;
     }
 
@@ -91,17 +91,17 @@ export class SoundManager {
 
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
-      
+
       // Higher pitched, shorter rapid fire sound
       const baseFreq = 1600;
-      const sweepFreq = baseFreq - (t * 400);
-      
+      const sweepFreq = baseFreq - t * 400;
+
       // Very quick attack and decay
       const envelope = Math.exp(-t * 25) * (1 - Math.exp(-t * 80));
-      
+
       const fundamental = Math.sin(2 * Math.PI * sweepFreq * t) * 0.8;
       const click = Math.exp(-t * 100) * 0.2; // Sharp click
-      
+
       data[i] = (fundamental + click) * envelope * 0.35;
     }
 
@@ -119,18 +119,18 @@ export class SoundManager {
 
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
-      
+
       // Deeper, more powerful sound for triple fire
       const baseFreq = 900;
-      const sweepFreq = baseFreq - (t * 300);
-      
+      const sweepFreq = baseFreq - t * 300;
+
       const envelope = Math.exp(-t * 12) * (1 - Math.exp(-t * 40));
-      
+
       // Add multiple harmonics for richness
       const fundamental = Math.sin(2 * Math.PI * sweepFreq * t) * 0.6;
       const harmonic2 = Math.sin(2 * Math.PI * sweepFreq * 1.33 * t) * 0.3;
       const harmonic3 = Math.sin(2 * Math.PI * sweepFreq * 2 * t) * 0.1;
-      
+
       data[i] = (fundamental + harmonic2 + harmonic3) * envelope * 0.45;
     }
 
@@ -148,14 +148,14 @@ export class SoundManager {
 
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
-      
+
       // Rising tone with sparkle
-      const frequency = 300 + (t * 800); // Rising frequency
+      const frequency = 300 + t * 800; // Rising frequency
       const sparkle = Math.sin(2 * Math.PI * frequency * 3 * t) * 0.2; // High freq sparkle
       const envelope = Math.exp(-t * 3) * Math.sin(t * 8); // Modulated envelope
-      
+
       const tone = Math.sin(2 * Math.PI * frequency * t) * 0.8;
-      
+
       data[i] = (tone + sparkle) * envelope * 0.3;
     }
 
