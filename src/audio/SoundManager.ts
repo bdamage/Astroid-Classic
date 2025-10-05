@@ -57,7 +57,7 @@ export class SoundManager {
     if (!this.audioContext) return;
 
     const sampleRate = this.audioContext.sampleRate;
-    const duration = 0.15;
+    const duration = 0.2; // Slightly longer for more satisfying sound
     const length = sampleRate * duration;
     const buffer = this.audioContext.createBuffer(1, length, sampleRate);
     const data = buffer.getChannelData(0);
@@ -65,20 +65,31 @@ export class SoundManager {
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
 
-      // Multi-layered laser sound
-      const baseFreq = 1200;
-      const sweepFreq = baseFreq - t * 800; // Frequency sweep down
-      const harmonicFreq = sweepFreq * 1.5; // Harmonic
+      // Enhanced laser sound with more dramatic frequency sweep
+      const baseFreq = 1400; // Higher starting frequency
+      const sweepFreq = baseFreq - t * 1000; // More dramatic frequency sweep down
+      const harmonicFreq = sweepFreq * 1.8; // Higher harmonic for more metallic sound
+      const subHarmonic = sweepFreq * 0.5; // Sub-harmonic for more depth
 
-      // Sharp attack, quick decay
-      const envelope = Math.exp(-t * 15) * (1 - Math.exp(-t * 50));
+      // More pronounced attack and longer sustain
+      const attack = Math.min(1, t * 100); // Quick attack
+      const decay = Math.exp(-t * 8); // Slower decay for more sustain
+      const envelope = attack * decay;
 
-      // Add some harmonic content for richness
-      const fundamental = Math.sin(2 * Math.PI * sweepFreq * t) * 0.7;
-      const harmonic = Math.sin(2 * Math.PI * harmonicFreq * t) * 0.3;
-      const noise = (Math.random() * 2 - 1) * 0.1 * Math.exp(-t * 30); // Quick noise burst
+      // Multiple layers for richer laser sound
+      const fundamental = Math.sin(2 * Math.PI * sweepFreq * t) * 0.6;
+      const harmonic = Math.sin(2 * Math.PI * harmonicFreq * t) * 0.25;
+      const subHarm = Math.sin(2 * Math.PI * subHarmonic * t) * 0.15;
 
-      data[i] = (fundamental + harmonic + noise) * envelope * 0.4;
+      // Add filtered noise for laser texture
+      const noiseEnv = Math.exp(-t * 25);
+      const noise = (Math.random() * 2 - 1) * 0.08 * noiseEnv;
+
+      // Combine all elements with phasing for more interesting sound
+      const phase = Math.sin(t * 15) * 0.1;
+
+      data[i] =
+        (fundamental + harmonic + subHarm + noise + phase) * envelope * 0.5;
     }
 
     this.sounds.set("shoot", buffer);

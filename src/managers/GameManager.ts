@@ -1,4 +1,5 @@
-import {Game, GameState} from "../core/Game";
+import type {IGameContext} from "../core/GameTypes";
+import {GameState} from "../core/GameTypes";
 import {Spaceship} from "../entities/Spaceship";
 import {Asteroid} from "../entities/Asteroid";
 import {Bullet} from "../entities/Bullet";
@@ -13,7 +14,7 @@ import {WeaponSystem} from "../systems/WeaponSystem";
 import {WaveManager} from "../systems/WaveManager";
 
 export class GameManager {
-  private game: Game;
+  private game: IGameContext;
   private spaceship: Spaceship | null = null;
   private asteroids: Asteroid[] = [];
   private bullets: Bullet[] = [];
@@ -30,7 +31,7 @@ export class GameManager {
   private isRespawning: boolean = false;
   private powerUpSpawnTimer: number = 0;
 
-  constructor(game: Game) {
+  constructor(game: IGameContext) {
     this.game = game;
   }
 
@@ -38,6 +39,7 @@ export class GameManager {
     this.resetGame();
     this.spawnSpaceship();
     this.spawnInitialAsteroids();
+    this.waveManager.startWave(1); // Start the first enemy wave
   }
 
   private resetGame(): void {
@@ -58,6 +60,7 @@ export class GameManager {
     const centerX = this.game.canvasWidth / 2;
     const centerY = this.game.canvasHeight / 2;
     this.spaceship = new Spaceship({x: centerX, y: centerY});
+    this.spaceship.makeInvulnerable(); // Add invulnerability period when spawning
     this.isRespawning = false;
   }
 
@@ -108,7 +111,13 @@ export class GameManager {
     this.weaponSystem.update(deltaTime);
 
     // Update wave manager and spawn enemies
-    const waveUpdate = this.waveManager.update(deltaTime);
+    const playerPosition = this.spaceship ? this.spaceship.position : undefined;
+    const waveUpdate = this.waveManager.update(
+      deltaTime,
+      this.game.canvasWidth,
+      this.game.canvasHeight,
+      playerPosition
+    );
     waveUpdate.enemiesToSpawn.forEach((enemy) => {
       const newEnemy = new Enemy(enemy.position, enemy.type);
       if (this.spaceship) {
@@ -175,10 +184,10 @@ export class GameManager {
       this.shield = null;
     }
 
-    // Power-up spawning
+    // Power-up spawning - more frequent spawning
     this.powerUpSpawnTimer += deltaTime;
-    if (this.powerUpSpawnTimer >= 15000) {
-      // Spawn power-up every 15 seconds
+    if (this.powerUpSpawnTimer >= 7000) {
+      // Spawn power-up every 7 seconds (more frequent)
       this.spawnPowerUp();
       this.powerUpSpawnTimer = 0;
     }
@@ -293,6 +302,24 @@ export class GameManager {
     } else {
       this.powerUps.push(new PowerUp({x, y}, randomType));
     }
+  }
+
+  private spawnPowerUpAt(x: number, y: number): void {
+    // Random power-up type
+    const types = [
+      "rapidFire",
+      "tripleShot",
+      "spreadShot",
+      "powerShot",
+      "shield",
+      "hyperspace",
+      "slowMotion",
+      "homingMissile",
+    ] as const;
+    const randomType = types[Math.floor(Math.random() * types.length)];
+
+    // Spawn at the specified position (like where an asteroid was destroyed)
+    this.powerUps.push(new PowerUp({x, y}, randomType));
   }
 
   private handleSpecialPowerUps(config: any): void {
@@ -459,6 +486,11 @@ export class GameManager {
           const fragments = asteroid.split();
           this.asteroids.splice(asteroidIndex, 1); // Remove original asteroid
           this.asteroids.push(...fragments); // Add fragments
+
+          // Chance to spawn power-up when asteroid is destroyed (15% chance)
+          if (Math.random() < 0.15) {
+            this.spawnPowerUpAt(asteroid.position.x, asteroid.position.y);
+          }
 
           // Remove bullet
           this.bullets.splice(bulletIndex, 1);

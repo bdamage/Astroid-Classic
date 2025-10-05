@@ -25,7 +25,12 @@ export class WaveManager {
     this.generateWaveConfig(1);
   }
 
-  update(deltaTime: number): {
+  update(
+    deltaTime: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    playerPosition?: Vector2
+  ): {
     enemiesToSpawn: Array<{type: EnemyType; position: Vector2}>;
     waveComplete: boolean;
     newWave: boolean;
@@ -46,8 +51,12 @@ export class WaveManager {
     const currentGroup = this.currentWaveConfig.enemies[this.currentSpawnGroup];
     if (currentGroup && this.enemiesSpawnedInGroup < currentGroup.count) {
       if (this.spawnTimer >= currentGroup.spawnDelay) {
-        // Spawn enemy at random edge position
-        const position = this.getRandomSpawnPosition();
+        // Spawn enemy at random edge position with proper distance from player
+        const position = this.getRandomSpawnPosition(
+          canvasWidth,
+          canvasHeight,
+          playerPosition
+        );
         result.enemiesToSpawn.push({
           type: currentGroup.type,
           position,
@@ -72,26 +81,59 @@ export class WaveManager {
     return result;
   }
 
-  private getRandomSpawnPosition(): Vector2 {
+  private getRandomSpawnPosition(
+    canvasWidth: number,
+    canvasHeight: number,
+    playerPosition?: Vector2
+  ): Vector2 {
     const margin = 50;
-    const canvasWidth = 800; // This should be passed in or made configurable
-    const canvasHeight = 600;
+    const minDistanceFromPlayer = 400;
 
-    // Spawn from random edge
-    const edge = Math.floor(Math.random() * 4);
+    let attempts = 0;
+    const maxAttempts = 20;
 
-    switch (edge) {
-      case 0: // Top
-        return {x: Math.random() * canvasWidth, y: -margin};
-      case 1: // Right
-        return {x: canvasWidth + margin, y: Math.random() * canvasHeight};
-      case 2: // Bottom
-        return {x: Math.random() * canvasWidth, y: canvasHeight + margin};
-      case 3: // Left
-        return {x: -margin, y: Math.random() * canvasHeight};
-      default:
-        return {x: canvasWidth / 2, y: -margin};
+    while (attempts < maxAttempts) {
+      // Spawn from random edge
+      const edge = Math.floor(Math.random() * 4);
+      let position: Vector2;
+
+      switch (edge) {
+        case 0: // Top
+          position = {x: Math.random() * canvasWidth, y: -margin};
+          break;
+        case 1: // Right
+          position = {x: canvasWidth + margin, y: Math.random() * canvasHeight};
+          break;
+        case 2: // Bottom
+          position = {x: Math.random() * canvasWidth, y: canvasHeight + margin};
+          break;
+        case 3: // Left
+          position = {x: -margin, y: Math.random() * canvasHeight};
+          break;
+        default:
+          position = {x: canvasWidth / 2, y: -margin};
+      }
+
+      // Check distance from player if player position is provided
+      if (playerPosition) {
+        const distance = Math.sqrt(
+          Math.pow(position.x - playerPosition.x, 2) +
+            Math.pow(position.y - playerPosition.y, 2)
+        );
+
+        if (distance >= minDistanceFromPlayer) {
+          return position;
+        }
+      } else {
+        // If no player position provided, return the position
+        return position;
+      }
+
+      attempts++;
     }
+
+    // Fallback: spawn from top edge at safe distance
+    return {x: canvasWidth / 2, y: -margin};
   }
 
   startWave(waveNumber: number): void {

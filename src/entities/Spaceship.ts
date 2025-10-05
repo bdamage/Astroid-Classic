@@ -11,7 +11,7 @@ export class Spaceship extends GameObject {
   private friction: number = 0.98;
   private invulnerable: boolean = false;
   private invulnerabilityTime: number = 0;
-  private maxInvulnerabilityTime: number = 3000; // 3 seconds
+  private maxInvulnerabilityTime: number = 1500; // Reduced to 1.5 seconds
 
   constructor(position: Vector2) {
     super(position, 8);
@@ -129,7 +129,7 @@ export class Spaceship extends GameObject {
   }
 
   // Make ship temporarily invulnerable
-  makeInvulnerable(): void {
+  public makeInvulnerable(): void {
     this.invulnerable = true;
     this.invulnerabilityTime = this.maxInvulnerabilityTime;
   }

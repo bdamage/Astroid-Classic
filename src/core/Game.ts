@@ -4,15 +4,8 @@ import {ScreenShake} from "../effects/ScreenShake";
 import {Starfield} from "../effects/Starfield";
 import {HUD} from "../ui/HUD";
 import {LeaderboardManager, LeaderboardUI} from "../systems/LeaderboardManager";
-
-export const GameState = {
-  MENU: "menu",
-  PLAYING: "playing",
-  GAME_OVER: "game_over",
-  PAUSED: "paused",
-} as const;
-
-export type GameState = (typeof GameState)[keyof typeof GameState];
+import type {IGameContext} from "./GameTypes";
+import {GameState} from "./GameTypes";
 
 export class InputManager {
   private keys: Set<string> = new Set();
@@ -59,7 +52,7 @@ export class InputManager {
   }
 }
 
-export class Game {
+export class Game implements IGameContext {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private lastTime: number = 0;
@@ -257,19 +250,26 @@ export class Game {
     this.ctx.fillText(
       "GAME OVER",
       this.canvas.width / 2,
-      this.canvas.height / 2 - 50
+      this.canvas.height / 2 - 150
     );
 
     this.ctx.font = "24px Arial";
     this.ctx.fillText(
       `Final Score: ${this.score}`,
       this.canvas.width / 2,
-      this.canvas.height / 2
+      this.canvas.height / 2 - 100
     );
+
+    // Render leaderboard
+    this.leaderboardUI.render();
+
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.font = "24px Arial";
+    this.ctx.textAlign = "center";
     this.ctx.fillText(
       "Press SPACE to return to menu",
       this.canvas.width / 2,
-      this.canvas.height / 2 + 50
+      this.canvas.height - 50
     );
   }
 
@@ -282,7 +282,7 @@ export class Game {
       weaponSystem: this.gameManager.currentWeaponSystem,
       waveManager: this.gameManager.currentWaveManager,
       shieldHealth: this.gameManager.shieldHealth,
-      maxShieldHealth: this.gameManager.maxShieldHealth
+      maxShieldHealth: this.gameManager.maxShieldHealth,
     });
   }
 
@@ -319,7 +319,11 @@ export class Game {
   public gameOver(): void {
     this.gameState = GameState.GAME_OVER;
     // Add score to leaderboard
-    this.leaderboard.addScore(this.score, this.gameManager.currentWave, "Player");
+    this.leaderboard.addScore(
+      this.score,
+      this.gameManager.currentWave,
+      "Player"
+    );
   }
 
   public addScore(points: number): void {
