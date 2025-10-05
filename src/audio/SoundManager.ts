@@ -47,6 +47,10 @@ export class SoundManager {
     this.createSmallExplosionSound();
     this.createGameOverSound();
     this.createLevelUpSound();
+    this.createHomingMissileSound();
+    this.createShieldSound();
+    this.createHyperspaceSound();
+    this.createSlowMotionSound();
   }
 
   private createShootSound(): void {
@@ -304,5 +308,108 @@ export class SoundManager {
 
   public isAudioEnabled(): boolean {
     return this.isEnabled && this.audioContext !== null;
+  }
+
+  private createHomingMissileSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.6;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Warbling, seeking missile sound
+      const baseFreq = 200 + Math.sin(t * 15) * 100; // Oscillating frequency
+      const sweepFreq = baseFreq + t * 300; // Rising pitch
+
+      const envelope = Math.exp(-t * 2) * (1 - Math.exp(-t * 20));
+      const warble = Math.sin(2 * Math.PI * sweepFreq * t);
+      const modulation = Math.sin(2 * Math.PI * t * 8) * 0.3; // Warbling effect
+
+      data[i] = warble * (1 + modulation) * envelope * 0.3;
+    }
+
+    this.sounds.set("homingMissile", buffer);
+  }
+
+  private createShieldSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.4;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Shimmering shield activation sound
+      const freq1 = 600 + Math.sin(t * 30) * 100;
+      const freq2 = 800 + Math.cos(t * 20) * 80;
+
+      const envelope = Math.exp(-t * 3) * (1 - Math.exp(-t * 15));
+      const shimmer1 = Math.sin(2 * Math.PI * freq1 * t);
+      const shimmer2 = Math.sin(2 * Math.PI * freq2 * t);
+
+      data[i] = (shimmer1 + shimmer2 * 0.7) * envelope * 0.25;
+    }
+
+    this.sounds.set("shield", buffer);
+  }
+
+  private createHyperspaceSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.8;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Swooshing hyperspace jump sound
+      const sweepFreq = 1500 * Math.exp(-t * 4) + 200; // Rapid frequency drop
+      const noise = (Math.random() * 2 - 1) * Math.exp(-t * 2); // Fading noise
+
+      const envelope = Math.exp(-t * 2.5);
+      const sweep = Math.sin(2 * Math.PI * sweepFreq * t);
+
+      data[i] = (sweep * 0.6 + noise * 0.4) * envelope * 0.4;
+    }
+
+    this.sounds.set("hyperspace", buffer);
+  }
+
+  private createSlowMotionSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.5;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Deep, time-slowing effect
+      const baseFreq = 80 - t * 30; // Deep descending tone
+      const modFreq = 3; // Slow modulation
+
+      const envelope = 1 - Math.exp(-t * 8); // Slow attack
+      const tone = Math.sin(2 * Math.PI * baseFreq * t);
+      const modulation = Math.sin(2 * Math.PI * modFreq * t) * 0.2;
+
+      data[i] = tone * (1 + modulation) * envelope * 0.3;
+    }
+
+    this.sounds.set("slowMotion", buffer);
   }
 }

@@ -3,10 +3,14 @@ import {Spaceship} from "../entities/Spaceship";
 import {Asteroid} from "../entities/Asteroid";
 import {Bullet} from "../entities/Bullet";
 import {PowerUp} from "../entities/PowerUp";
+import {Enemy} from "../entities/Enemy";
+import {HomingMissile} from "../entities/HomingMissile";
+import {Shield} from "../entities/Shield";
 import {Vector2Utils} from "../utils/Vector2";
 import {ParticleSystem} from "../effects/ParticleSystem";
 import {FloatingTextManager} from "../effects/FloatingText";
 import {WeaponSystem} from "../systems/WeaponSystem";
+import {WaveManager} from "../systems/WaveManager";
 
 export class GameManager {
   private game: Game;
@@ -14,7 +18,11 @@ export class GameManager {
   private asteroids: Asteroid[] = [];
   private bullets: Bullet[] = [];
   private powerUps: PowerUp[] = [];
+  private enemies: Enemy[] = [];
+  private homingMissiles: HomingMissile[] = [];
+  private shield: Shield | null = null;
   private weaponSystem: WeaponSystem = new WeaponSystem();
+  private waveManager: WaveManager = new WaveManager();
   private particleSystem: ParticleSystem = new ParticleSystem();
   private floatingTextManager: FloatingTextManager = new FloatingTextManager();
   private spawnTimer: number = 0;
@@ -99,6 +107,39 @@ export class GameManager {
     // Update weapon system
     this.weaponSystem.update(deltaTime);
 
+    // Update wave manager and spawn enemies
+    const waveUpdate = this.waveManager.update(deltaTime);
+    waveUpdate.enemiesToSpawn.forEach((enemy) => {
+      const newEnemy = new Enemy(enemy.position, enemy.type);
+      if (this.spaceship) {
+        newEnemy.setTarget(this.spaceship.position);
+      }
+      this.enemies.push(newEnemy);
+    });
+
+    // Update enemies
+    this.enemies.forEach((enemy) => {
+      if (this.spaceship) {
+        enemy.setTarget(this.spaceship.position);
+      }
+      enemy.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
+    });
+
+    // Update homing missiles
+    this.homingMissiles.forEach((missile) => {
+      missile.setTargets([...this.asteroids, ...this.enemies]);
+      missile.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
+    });
+
+    // Update shield
+    if (this.shield && this.spaceship) {
+      this.shield.update(
+        deltaTime,
+        this.game.canvasWidth,
+        this.game.canvasHeight
+      );
+    }
+
     // Update asteroids
     this.asteroids.forEach((asteroid) => {
       asteroid.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
@@ -124,6 +165,15 @@ export class GameManager {
     this.bullets = this.bullets.filter((bullet) => bullet.active);
     this.asteroids = this.asteroids.filter((asteroid) => asteroid.active);
     this.powerUps = this.powerUps.filter((powerUp) => powerUp.active);
+    this.enemies = this.enemies.filter((enemy) => enemy.active);
+    this.homingMissiles = this.homingMissiles.filter(
+      (missile) => missile.active
+    );
+
+    // Remove shield if depleted
+    if (this.shield && this.shield.getHealth() <= 0) {
+      this.shield = null;
+    }
 
     // Power-up spawning
     this.powerUpSpawnTimer += deltaTime;
@@ -182,6 +232,11 @@ export class GameManager {
     if (input.isKeyPressed("Space")) {
       this.shoot();
     }
+
+    // Launch homing missile
+    if (input.isKeyPressed("KeyX")) {
+      this.launchHomingMissile();
+    }
   }
 
   private spawnPowerUp(): void {
@@ -194,6 +249,10 @@ export class GameManager {
       "tripleShot",
       "spreadShot",
       "powerShot",
+      "shield",
+      "hyperspace",
+      "slowMotion",
+      "homingMissile",
     ] as const;
     const randomType = types[Math.floor(Math.random() * types.length)];
 
@@ -233,6 +292,92 @@ export class GameManager {
       }
     } else {
       this.powerUps.push(new PowerUp({x, y}, randomType));
+    }
+  }
+
+  private handleSpecialPowerUps(config: any): void {
+    if (!this.spaceship) return;
+
+    switch (config.type) {
+      case "shield":
+        if (!this.shield) {
+          this.shield = new Shield(this.spaceship);
+          this.game.sound.playSound("shield", 0.5);
+          this.particleSystem.createPowerUpEffect(
+            this.spaceship.position,
+            "#00ffff"
+          );
+        }
+        break;
+
+      case "hyperspace":
+        this.performHyperspace();
+        break;
+
+      case "slowMotion":
+        this.game.sound.playSound("slowMotion", 0.4);
+        this.particleSystem.createPowerUpEffect(
+          this.spaceship.position,
+          "#ffff00"
+        );
+        break;
+    }
+  }
+
+  private performHyperspace(): void {
+    if (!this.spaceship) return;
+
+    const oldPosition = {...this.spaceship.position};
+
+    // Find safe teleport location
+    let attempts = 0;
+    let newPosition;
+
+    do {
+      newPosition = {
+        x: Math.random() * this.game.canvasWidth,
+        y: Math.random() * this.game.canvasHeight,
+      };
+      attempts++;
+    } while (attempts < 10 && !this.isPositionSafe(newPosition, 100));
+
+    // Teleport
+    this.spaceship.position = newPosition;
+
+    // Create effects
+    this.particleSystem.createHyperspaceEffect(oldPosition, newPosition);
+    this.game.sound.playSound("hyperspace", 0.6);
+    this.game.shake.shake(5, 200);
+  }
+
+  private isPositionSafe(position: any, radius: number): boolean {
+    // Check against asteroids
+    for (const asteroid of this.asteroids) {
+      const distance = Vector2Utils.distance(position, asteroid.position);
+      if (distance < radius + asteroid.radius) return false;
+    }
+
+    // Check against enemies
+    for (const enemy of this.enemies) {
+      const distance = Vector2Utils.distance(position, enemy.position);
+      if (distance < radius + enemy.radius) return false;
+    }
+
+    return true;
+  }
+
+  private launchHomingMissile(): void {
+    if (!this.spaceship || !this.weaponSystem.canLaunchHomingMissile()) return;
+
+    const missile = this.weaponSystem.launchHomingMissile(
+      this.spaceship.getFrontPosition(),
+      this.spaceship.rotation
+    );
+
+    if (missile) {
+      this.homingMissiles.push(missile);
+      this.game.sound.playSound("homingMissile", 0.5);
+      this.game.shake.shake(3, 150);
     }
   }
 
@@ -333,13 +478,19 @@ export class GameManager {
       if (this.spaceship.checkCollision(powerUp)) {
         // Apply power-up effect
         const config = powerUp.getConfig();
-        this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
+
+        // Handle special power-ups that don't use the weapon system
+        if (["shield", "hyperspace", "slowMotion"].includes(config.type)) {
+          this.handleSpecialPowerUps(config);
+        } else {
+          this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
+        }
 
         // Add floating text
         this.floatingTextManager.addPowerUpText(powerUp.position, config.name);
 
         // Create pickup effect
-        this.particleSystem.createExplosion(powerUp.position, config.color, 8);
+        this.particleSystem.createPowerUpEffect(powerUp.position, config.color);
 
         // Play power-up sound
         this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
@@ -349,6 +500,136 @@ export class GameManager {
 
         // Remove power-up
         this.powerUps.splice(powerUpIndex, 1);
+      }
+    }
+
+    // Spaceship vs Enemies (with shield check)
+    if (this.spaceship.canTakeDamage()) {
+      for (const enemy of this.enemies) {
+        if (this.spaceship.checkCollision(enemy)) {
+          if (this.shield) {
+            if (this.shield.takeDamage()) {
+              this.shield = null;
+              this.particleSystem.createShieldHitEffect(enemy.position);
+              this.game.sound.playSound("shield", 0.5);
+            }
+          } else {
+            this.spaceshipDestroyed();
+            break;
+          }
+        }
+      }
+    }
+
+    // Bullets vs Enemies
+    for (
+      let bulletIndex = this.bullets.length - 1;
+      bulletIndex >= 0;
+      bulletIndex--
+    ) {
+      const bullet = this.bullets[bulletIndex];
+
+      for (
+        let enemyIndex = this.enemies.length - 1;
+        enemyIndex >= 0;
+        enemyIndex--
+      ) {
+        const enemy = this.enemies[enemyIndex];
+
+        if (bullet.checkCollision(enemy)) {
+          if (enemy.takeDamage()) {
+            // Enemy destroyed
+            this.game.addScore(enemy.getScore());
+            this.floatingTextManager.addScoreText(
+              enemy.position,
+              enemy.getScore()
+            );
+            this.particleSystem.createEnemyExplosion(
+              enemy.position,
+              enemy.getType()
+            );
+            this.game.sound.playSound(
+              "explosion",
+              0.5,
+              1.0 + Math.random() * 0.2
+            );
+            this.game.shake.shake(5, 200);
+            this.waveManager.enemyDestroyed();
+            this.enemies.splice(enemyIndex, 1);
+          }
+
+          // Remove bullet
+          this.bullets.splice(bulletIndex, 1);
+          break;
+        }
+      }
+    }
+
+    // Homing Missiles vs Targets
+    for (
+      let missileIndex = this.homingMissiles.length - 1;
+      missileIndex >= 0;
+      missileIndex--
+    ) {
+      const missile = this.homingMissiles[missileIndex];
+
+      // Check vs asteroids
+      for (
+        let asteroidIndex = this.asteroids.length - 1;
+        asteroidIndex >= 0;
+        asteroidIndex--
+      ) {
+        const asteroid = this.asteroids[asteroidIndex];
+
+        if (missile.checkCollision(asteroid)) {
+          const score = asteroid.getScore() * 2; // Bonus for homing missile
+          this.game.addScore(score);
+          this.floatingTextManager.addScoreText(asteroid.position, score);
+          this.particleSystem.createExplosion(
+            asteroid.position,
+            "#ff9900",
+            10,
+            "bright"
+          );
+
+          const fragments = asteroid.split();
+          this.asteroids.splice(asteroidIndex, 1);
+          this.asteroids.push(...fragments);
+          this.homingMissiles.splice(missileIndex, 1);
+
+          this.game.sound.playSound("explosion", 0.6, 0.8);
+          this.game.shake.shake(8, 300);
+          break;
+        }
+      }
+
+      // Check vs enemies
+      for (
+        let enemyIndex = this.enemies.length - 1;
+        enemyIndex >= 0;
+        enemyIndex--
+      ) {
+        const enemy = this.enemies[enemyIndex];
+
+        if (missile.checkCollision(enemy)) {
+          if (enemy.takeDamage(2)) {
+            // Homing missiles do more damage
+            const score = enemy.getScore() * 2;
+            this.game.addScore(score);
+            this.floatingTextManager.addScoreText(enemy.position, score);
+            this.particleSystem.createEnemyExplosion(
+              enemy.position,
+              enemy.getType()
+            );
+            this.waveManager.enemyDestroyed();
+            this.enemies.splice(enemyIndex, 1);
+          }
+
+          this.homingMissiles.splice(missileIndex, 1);
+          this.game.sound.playSound("explosion", 0.6, 1.2);
+          this.game.shake.shake(8, 300);
+          break;
+        }
       }
     }
   }
@@ -420,8 +701,14 @@ export class GameManager {
     // Render asteroids
     this.asteroids.forEach((asteroid) => asteroid.render(ctx));
 
+    // Render enemies
+    this.enemies.forEach((enemy) => enemy.render(ctx));
+
     // Render bullets
     this.bullets.forEach((bullet) => bullet.render(ctx));
+
+    // Render homing missiles
+    this.homingMissiles.forEach((missile) => missile.render(ctx));
 
     // Render power-ups
     this.powerUps.forEach((powerUp) => powerUp.render(ctx));
@@ -435,6 +722,11 @@ export class GameManager {
     // Render spaceship
     if (this.spaceship) {
       this.spaceship.render(ctx);
+    }
+
+    // Render shield
+    if (this.shield) {
+      this.shield.render(ctx);
     }
 
     // Render respawn message

@@ -9,3 +9,11 @@ And satisfying sound effects
 Add some enemies that comes wave in different waves
 Add to HUD interface a wave counter
 Bright explosions, screen shakes, particle effects.
+
+
+
+Add following enahncements:
+
+1. Health bar shows red bar with the health status 0-100 
+2. The helathbar should be affected when touching an astroid reduce 4
+3. Add a shield field around the players ship activate using key Q 

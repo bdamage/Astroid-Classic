@@ -2,6 +2,8 @@ import {GameManager} from "../managers/GameManager";
 import {SoundManager} from "../audio/SoundManager";
 import {ScreenShake} from "../effects/ScreenShake";
 import {Starfield} from "../effects/Starfield";
+import {HUD} from "../ui/HUD";
+import {LeaderboardManager, LeaderboardUI} from "../systems/LeaderboardManager";
 
 export const GameState = {
   MENU: "menu",
@@ -66,6 +68,10 @@ export class Game {
   private gameManager: GameManager;
   private soundManager: SoundManager;
   private screenShake: ScreenShake;
+  private starfield: Starfield;
+  private hud: HUD;
+  private leaderboard: LeaderboardManager;
+  private leaderboardUI: LeaderboardUI;
   private starfield: Starfield;
 
   public score: number = 0;

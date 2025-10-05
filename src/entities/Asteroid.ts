@@ -22,6 +22,14 @@ export class Asteroid extends GameObject {
     this.velocity = velocity;
     this.size = size;
     this.rotationSpeed = (Math.random() - 0.5) * 2; // Random rotation speed
+    console.log(
+      "Asteroid size:",
+      size,
+      "Radius:",
+      radius,
+      "Rotation Speed:",
+      this.rotationSpeed
+    );
     this.vertices = this.generateVertices();
   }
 

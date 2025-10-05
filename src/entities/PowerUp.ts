@@ -7,6 +7,10 @@ export const PowerUpType = {
   TRIPLE_SHOT: "tripleShot",
   SPREAD_SHOT: "spreadShot",
   POWER_SHOT: "powerShot",
+  SHIELD: "shield",
+  HYPERSPACE: "hyperspace",
+  SLOW_MOTION: "slowMotion",
+  HOMING_MISSILE: "homingMissile",
 } as const;
 
 export type PowerUpType = (typeof PowerUpType)[keyof typeof PowerUpType];
@@ -52,6 +56,38 @@ export const POWER_UP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     symbol: "P",
     duration: 6000, // 6 seconds
     description: "Bullets pierce through asteroids",
+  },
+  [PowerUpType.SHIELD]: {
+    type: PowerUpType.SHIELD,
+    name: "Shield",
+    color: "#00ffff",
+    symbol: "♦",
+    duration: 15000, // 15 seconds
+    description: "Protection from asteroid impacts",
+  },
+  [PowerUpType.HYPERSPACE]: {
+    type: PowerUpType.HYPERSPACE,
+    name: "Hyperspace",
+    color: "#9900ff",
+    symbol: "✦",
+    duration: 0, // Instant use
+    description: "Emergency teleport to random location",
+  },
+  [PowerUpType.SLOW_MOTION]: {
+    type: PowerUpType.SLOW_MOTION,
+    name: "Slow Motion",
+    color: "#ffff00",
+    symbol: "◈",
+    duration: 8000, // 8 seconds
+    description: "Slows down time for precision",
+  },
+  [PowerUpType.HOMING_MISSILE]: {
+    type: PowerUpType.HOMING_MISSILE,
+    name: "Homing Missile",
+    color: "#ff9900",
+    symbol: "◆",
+    duration: 30000, // 30 seconds (3 missiles)
+    description: "Launch seeking missiles",
   },
 };
 

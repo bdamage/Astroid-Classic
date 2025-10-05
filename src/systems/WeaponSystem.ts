@@ -1,10 +1,12 @@
 import {Bullet} from "../entities/Bullet";
+import {HomingMissile} from "../entities/HomingMissile";
 import {PowerUpType} from "../entities/PowerUp";
 import type {Vector2} from "../utils/Vector2";
 
 export interface ActivePowerUp {
   type: PowerUpType;
   timeRemaining: number;
+  usesRemaining?: number; // For limited-use power-ups like homing missiles
 }
 
 export class WeaponSystem {
@@ -73,10 +75,17 @@ export class WeaponSystem {
     );
 
     // Add new power-up
-    this.activePowerUps.push({
+    const newPowerUp: ActivePowerUp = {
       type,
       timeRemaining: duration,
-    });
+    };
+
+    // Special handling for power-ups with limited uses
+    if (type === PowerUpType.HOMING_MISSILE) {
+      newPowerUp.usesRemaining = 3; // 3 homing missiles
+    }
+
+    this.activePowerUps.push(newPowerUp);
   }
 
   hasPowerUp(type: PowerUpType): boolean {
@@ -95,8 +104,55 @@ export class WeaponSystem {
       this.hasPowerUp(PowerUpType.SPREAD_SHOT)
     ) {
       return "tripleFire";
+    } else if (this.hasPowerUp(PowerUpType.HOMING_MISSILE)) {
+      return "homingMissile";
     }
     return "shoot";
+  }
+
+  canLaunchHomingMissile(): boolean {
+    const powerUp = this.activePowerUps.find(
+      (p) => p.type === PowerUpType.HOMING_MISSILE
+    );
+    return powerUp !== undefined && (powerUp.usesRemaining ?? 0) > 0;
+  }
+
+  launchHomingMissile(
+    position: Vector2,
+    direction: number
+  ): HomingMissile | null {
+    const powerUp = this.activePowerUps.find(
+      (p) => p.type === PowerUpType.HOMING_MISSILE
+    );
+    if (!powerUp || (powerUp.usesRemaining ?? 0) <= 0) {
+      return null;
+    }
+
+    // Decrease uses
+    if (powerUp.usesRemaining) {
+      powerUp.usesRemaining--;
+      if (powerUp.usesRemaining <= 0) {
+        // Remove power-up when no uses left
+        this.activePowerUps = this.activePowerUps.filter((p) => p !== powerUp);
+      }
+    }
+
+    return new HomingMissile(position, direction);
+  }
+
+  hasSlowMotion(): boolean {
+    return this.hasPowerUp(PowerUpType.SLOW_MOTION);
+  }
+
+  hasShield(): boolean {
+    return this.hasPowerUp(PowerUpType.SHIELD);
+  }
+
+  getHomingMissileCount(): number {
+    const powerUp = this.activePowerUps.find(
+      (p) => p.type === PowerUpType.HOMING_MISSILE
+    );
+    return powerUp?.usesRemaining ?? 0;
   }
 
   reset(): void {
