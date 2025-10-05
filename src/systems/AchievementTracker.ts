@@ -11,7 +11,6 @@ export class AchievementTracker {
   private killStreak: number = 0;
   private powerUpStreak: number = 0;
   private lastKillTime: number = 0;
-  private achievements: Achievement[] = [];
 
   // Streak thresholds
   private readonly KILL_STREAK_THRESHOLDS = [3, 5, 8, 12, 20, 30];
