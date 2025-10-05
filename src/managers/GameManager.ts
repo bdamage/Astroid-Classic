@@ -237,8 +237,8 @@ export class GameManager {
       this.spaceship.setTurnSpeed(1);
     }
 
-    // Shoot
-    if (input.isKeyPressed("Space")) {
+    // Shoot - continuous firing while holding space
+    if (input.isKeyDown("Space")) {
       this.shoot();
     }
 
@@ -417,16 +417,19 @@ export class GameManager {
       this.spaceship.rotation
     );
 
-    // Add bullets to the game
-    this.bullets.push(...newBullets);
+    // Only process if bullets were actually fired (not on cooldown)
+    if (newBullets.length > 0) {
+      // Add bullets to the game
+      this.bullets.push(...newBullets);
 
-    // Play appropriate sound
-    const soundName = this.weaponSystem.getSoundForCurrentWeapon();
-    this.game.sound.playSound(soundName, 0.4, 0.9 + Math.random() * 0.2);
+      // Play appropriate sound
+      const soundName = this.weaponSystem.getSoundForCurrentWeapon();
+      this.game.sound.playSound(soundName, 0.4, 0.9 + Math.random() * 0.2);
 
-    // Screen shake
-    const shakeIntensity = newBullets.length > 1 ? 2 : 1;
-    this.game.shake.shake(shakeIntensity, 50);
+      // Screen shake
+      const shakeIntensity = newBullets.length > 1 ? 2 : 1;
+      this.game.shake.shake(shakeIntensity, 50);
+    }
   }
   private checkCollisions(): void {
     if (!this.spaceship || !this.spaceship.active) return;
