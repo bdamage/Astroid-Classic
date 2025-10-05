@@ -429,16 +429,20 @@ export class GameManager {
     this.game.shake.shake(shakeIntensity, 50);
   }
   private checkCollisions(): void {
-    if (!this.spaceship) return;
+    if (!this.spaceship || !this.spaceship.active) return;
 
-    // Spaceship vs Asteroids
-    if (this.spaceship.canTakeDamage()) {
-      for (const asteroid of this.asteroids) {
-        if (this.spaceship.checkCollision(asteroid)) {
-          this.spaceshipDestroyed();
-          break;
+    try {
+      // Spaceship vs Asteroids
+      if (this.spaceship.canTakeDamage()) {
+        for (const asteroid of this.asteroids) {
+          if (this.spaceship.checkCollision(asteroid)) {
+            this.spaceshipDestroyed();
+            break;
+          }
         }
       }
+    } catch (error) {
+      console.error("Error in spaceship collision detection:", error);
     }
 
     // Bullets vs Asteroids
@@ -500,43 +504,55 @@ export class GameManager {
     }
 
     // Spaceship vs PowerUps
-    for (
-      let powerUpIndex = this.powerUps.length - 1;
-      powerUpIndex >= 0;
-      powerUpIndex--
-    ) {
-      const powerUp = this.powerUps[powerUpIndex];
+    if (this.spaceship && this.spaceship.active) {
+      for (
+        let powerUpIndex = this.powerUps.length - 1;
+        powerUpIndex >= 0;
+        powerUpIndex--
+      ) {
+        const powerUp = this.powerUps[powerUpIndex];
 
-      if (this.spaceship.checkCollision(powerUp)) {
-        // Apply power-up effect
-        const config = powerUp.getConfig();
+        if (this.spaceship.checkCollision(powerUp)) {
+          // Apply power-up effect
+          const config = powerUp.getConfig();
 
-        // Handle special power-ups that don't use the weapon system
-        if (["shield", "hyperspace", "slowMotion"].includes(config.type)) {
-          this.handleSpecialPowerUps(config);
-        } else {
-          this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
+          // Handle special power-ups that don't use the weapon system
+          if (["shield", "hyperspace", "slowMotion"].includes(config.type)) {
+            this.handleSpecialPowerUps(config);
+          } else {
+            this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
+          }
+
+          // Add floating text
+          this.floatingTextManager.addPowerUpText(
+            powerUp.position,
+            config.name
+          );
+
+          // Create pickup effect
+          this.particleSystem.createPowerUpEffect(
+            powerUp.position,
+            config.color
+          );
+
+          // Play power-up sound
+          this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
+
+          // Screen shake for feedback
+          this.game.shake.shake(3, 150);
+
+          // Remove power-up
+          this.powerUps.splice(powerUpIndex, 1);
         }
-
-        // Add floating text
-        this.floatingTextManager.addPowerUpText(powerUp.position, config.name);
-
-        // Create pickup effect
-        this.particleSystem.createPowerUpEffect(powerUp.position, config.color);
-
-        // Play power-up sound
-        this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
-
-        // Screen shake for feedback
-        this.game.shake.shake(3, 150);
-
-        // Remove power-up
-        this.powerUps.splice(powerUpIndex, 1);
       }
     }
 
     // Spaceship vs Enemies (with shield check)
-    if (this.spaceship.canTakeDamage()) {
+    if (
+      this.spaceship &&
+      this.spaceship.active &&
+      this.spaceship.canTakeDamage()
+    ) {
       for (const enemy of this.enemies) {
         if (this.spaceship.checkCollision(enemy)) {
           if (this.shield) {
@@ -667,24 +683,42 @@ export class GameManager {
   }
 
   private spaceshipDestroyed(): void {
-    if (!this.spaceship) return;
+    if (!this.spaceship || !this.spaceship.active) return; // Prevent double destruction
 
-    // Create explosion effect
-    this.particleSystem.createExplosion(this.spaceship.position, "#ff6600", 12);
-    this.particleSystem.createDebris(this.spaceship.position, 8);
+    try {
+      // Mark spaceship as inactive to prevent double destruction
+      this.spaceship.active = false;
 
-    // Play explosion sound and strong screen shake
-    this.game.sound.playSound("explosion", 0.8, 0.7);
-    this.game.shake.shake(15, 500);
+      // Create explosion effect
+      this.particleSystem.createExplosion(
+        this.spaceship.position,
+        "#ff6600",
+        12
+      );
+      this.particleSystem.createDebris(this.spaceship.position, 8);
 
-    this.spaceship.destroy();
-    this.spaceship = null;
-    this.game.loseLife();
+      // Play explosion sound and strong screen shake
+      this.game.sound.playSound("explosion", 0.8, 0.7);
+      this.game.shake.shake(15, 500);
 
-    if (this.game.lives <= 0) {
-      // Play game over sound
-      this.game.sound.playSound("gameOver", 0.6);
-    } else {
+      this.spaceship.destroy();
+      this.spaceship = null;
+      this.game.loseLife();
+
+      if (this.game.lives <= 0) {
+        // Play game over sound
+        this.game.sound.playSound("gameOver", 0.6);
+      } else {
+        this.isRespawning = true;
+        this.respawnTimer = 0;
+      }
+    } catch (error) {
+      console.error("Error in spaceshipDestroyed:", error);
+      // Ensure cleanup even if there's an error
+      if (this.spaceship) {
+        this.spaceship.destroy();
+        this.spaceship = null;
+      }
       this.isRespawning = true;
       this.respawnTimer = 0;
     }
