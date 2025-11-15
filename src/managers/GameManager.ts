@@ -36,6 +36,7 @@ export class GameManager {
   private powerUpSpawnTimer: number = 0;
   private bossIntroTimer: number = 0;
   private showingBossIntro: boolean = false;
+  private infiniteLives: boolean = false;
 
   constructor(game: IGameContext) {
     this.game = game;
@@ -355,6 +356,19 @@ export class GameManager {
     // Activate shield manually
     if (input.isKeyPressed("KeyQ")) {
       this.activateShield();
+    }
+
+    // Toggle infinite lives cheat (I key)
+    if (input.isKeyPressed("KeyI")) {
+      this.infiniteLives = !this.infiniteLives;
+      const message = this.infiniteLives ? "INFINITE LIVES ON" : "INFINITE LIVES OFF";
+      this.floatingTextManager.addText(
+        { x: this.game.canvasWidth / 2, y: this.game.canvasHeight / 2 },
+        message,
+        this.infiniteLives ? "#00ff00" : "#ff0000",
+        32
+      );
+      this.game.sound.playSound("powerUp", 0.5, this.infiniteLives ? 1.5 : 0.7);
     }
   }
 
@@ -1132,6 +1146,8 @@ export class GameManager {
 
       // Boss vs Spaceship
       if (
+        this.boss &&
+        this.boss.active &&
         this.spaceship &&
         this.spaceship.active &&
         this.spaceship.canTakeDamage()
@@ -1271,12 +1287,15 @@ export class GameManager {
       // Reset shield on death
       this.shield = null;
 
-      this.game.loseLife();
+      // Lose a life (unless infinite lives cheat is active)
+      if (!this.infiniteLives) {
+        this.game.loseLife();
+      }
 
       // Reset achievement streaks on death
       this.game.achievements.resetStreaks();
 
-      if (this.game.lives <= 0) {
+      if (this.game.lives <= 0 && !this.infiniteLives) {
         // Play game over sound
         this.game.sound.playSound("gameOver", 0.6);
       } else {
