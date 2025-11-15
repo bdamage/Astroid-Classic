@@ -361,9 +361,11 @@ export class GameManager {
     // Toggle infinite lives cheat (I key)
     if (input.isKeyPressed("KeyI")) {
       this.infiniteLives = !this.infiniteLives;
-      const message = this.infiniteLives ? "INFINITE LIVES ON" : "INFINITE LIVES OFF";
+      const message = this.infiniteLives
+        ? "INFINITE LIVES ON"
+        : "INFINITE LIVES OFF";
       this.floatingTextManager.addText(
-        { x: this.game.canvasWidth / 2, y: this.game.canvasHeight / 2 },
+        {x: this.game.canvasWidth / 2, y: this.game.canvasHeight / 2},
         message,
         this.infiniteLives ? "#00ff00" : "#ff0000",
         32
