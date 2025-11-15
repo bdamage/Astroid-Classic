@@ -81,14 +81,24 @@ export class Boss extends GameObject {
     this.position.y += this.velocity.y * (deltaTime / 1000);
 
     // Keep within bounds
-    this.position.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.position.x));
-    this.position.y = Math.max(this.radius, Math.min(canvasHeight - this.radius, this.position.y));
+    this.position.x = Math.max(
+      this.radius,
+      Math.min(canvasWidth - this.radius, this.position.x)
+    );
+    this.position.y = Math.max(
+      this.radius,
+      Math.min(canvasHeight - this.radius, this.position.y)
+    );
 
     // Update rotation
     this.rotation += (deltaTime / 1000) * Math.PI * 0.5;
   }
 
-  private updateMovement(_deltaTime: number, canvasWidth: number, canvasHeight: number): void {
+  private updateMovement(
+    _deltaTime: number,
+    canvasWidth: number,
+    canvasHeight: number
+  ): void {
     const speed = this.config.speed;
 
     switch (this.bossType) {
@@ -170,13 +180,13 @@ export class Boss extends GameObject {
   getAttackPattern(): Vector2[] {
     // Return positions/directions for projectile spawns based on boss type and phase
     const patterns: Vector2[] = [];
-    
+
     switch (this.bossType) {
       case BossType.MOTHERSHIP:
         // Circular pattern
         const numProjectiles = 8 + this.phase * 4;
         for (let i = 0; i < numProjectiles; i++) {
-          const angle = (Math.PI * 2 / numProjectiles) * i + this.rotation;
+          const angle = ((Math.PI * 2) / numProjectiles) * i + this.rotation;
           patterns.push({
             x: Math.cos(angle),
             y: Math.sin(angle),
@@ -189,7 +199,12 @@ export class Boss extends GameObject {
         patterns.push({x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1});
         if (this.phase >= 1) {
           // Add diagonals
-          patterns.push({x: 0.707, y: 0.707}, {x: -0.707, y: 0.707}, {x: 0.707, y: -0.707}, {x: -0.707, y: -0.707});
+          patterns.push(
+            {x: 0.707, y: 0.707},
+            {x: -0.707, y: 0.707},
+            {x: 0.707, y: -0.707},
+            {x: -0.707, y: -0.707}
+          );
         }
         break;
 
@@ -251,7 +266,7 @@ export class Boss extends GameObject {
 
     // Spikes
     for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 / 8) * i;
+      const angle = ((Math.PI * 2) / 8) * i;
       const x1 = Math.cos(angle) * this.radius * 0.8;
       const y1 = Math.sin(angle) * this.radius * 0.8;
       const x2 = Math.cos(angle) * this.radius * 1.2;
@@ -268,19 +283,19 @@ export class Boss extends GameObject {
     ctx.strokeStyle = this.config.color;
     ctx.fillStyle = `${this.config.color}33`;
     ctx.lineWidth = 4;
-    
+
     const size = this.radius * 1.4;
     ctx.strokeRect(-size / 2, -size / 2, size, size);
     ctx.fillRect(-size / 2, -size / 2, size, size);
 
     // Turrets at corners
     const turretSize = this.radius * 0.3;
-    [-1, 1].forEach(xDir => {
-      [-1, 1].forEach(yDir => {
+    [-1, 1].forEach((xDir) => {
+      [-1, 1].forEach((yDir) => {
         ctx.beginPath();
         ctx.arc(
-          xDir * size / 2,
-          yDir * size / 2,
+          (xDir * size) / 2,
+          (yDir * size) / 2,
           turretSize,
           0,
           Math.PI * 2
@@ -302,7 +317,7 @@ export class Boss extends GameObject {
     ctx.strokeStyle = this.config.color;
     ctx.fillStyle = `${this.config.color}33`;
     ctx.lineWidth = 3;
-    
+
     ctx.beginPath();
     ctx.moveTo(0, -this.radius);
     ctx.lineTo(this.radius * 0.7, 0);
@@ -340,7 +355,12 @@ export class Boss extends GameObject {
 
     // Health
     const healthPercent = this.health / this.maxHealth;
-    const healthColor = healthPercent > 0.5 ? "#00ff00" : healthPercent > 0.25 ? "#ffff00" : "#ff0000";
+    const healthColor =
+      healthPercent > 0.5
+        ? "#00ff00"
+        : healthPercent > 0.25
+        ? "#ffff00"
+        : "#ff0000";
     ctx.fillStyle = healthColor;
     ctx.fillRect(x, y, barWidth * healthPercent, barHeight);
 

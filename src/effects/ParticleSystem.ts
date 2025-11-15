@@ -107,14 +107,7 @@ export class Particle {
     // Create glow effect for bright particles
     if (this.brightness > 1 && !this.isShockwave) {
       const glowSize = currentSize * this.brightness;
-      const gradient = ctx.createRadialGradient(
-        0,
-        0,
-        0,
-        0,
-        0,
-        glowSize
-      );
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowSize);
 
       // Parse color for glow effect
       const color = this.color;
@@ -139,7 +132,7 @@ export class Particle {
 
     // Main particle
     ctx.globalAlpha = alpha;
-    
+
     if (this.isShockwave) {
       // Render as expanding ring
       ctx.strokeStyle = this.color;
@@ -423,11 +416,15 @@ export class ParticleSystem {
   }
 
   // Create expanding shockwave ring
-  createShockwave(position: Vector2, color: string = "#ffffff", size: number = 20): void {
+  createShockwave(
+    position: Vector2,
+    color: string = "#ffffff",
+    size: number = 20
+  ): void {
     this.particles.push(
       new Particle(
-        { x: position.x, y: position.y },
-        { x: 0, y: 0 },
+        {x: position.x, y: position.y},
+        {x: 0, y: 0},
         color,
         400,
         size,
@@ -441,16 +438,20 @@ export class ParticleSystem {
   }
 
   // Create missile trail effect
-  createMissileTrail(position: Vector2, direction: number, color: string = "#ff9900"): void {
+  createMissileTrail(
+    position: Vector2,
+    direction: number,
+    color: string = "#ff9900"
+  ): void {
     const numTrails = 2;
     for (let i = 0; i < numTrails; i++) {
       const angle = direction + Math.PI + (Math.random() - 0.5) * 0.3;
       const speed = 30 + Math.random() * 20;
       const velocity = Vector2Utils.fromAngle(angle, speed);
-      
+
       this.particles.push(
         new Particle(
-          { x: position.x, y: position.y },
+          {x: position.x, y: position.y},
           velocity,
           color,
           300 + Math.random() * 200,
@@ -476,10 +477,10 @@ export class ParticleSystem {
       const speed = 100 + Math.random() * 100 * intensity;
       const velocity = Vector2Utils.fromAngle(angle, speed);
       const color = colors[Math.floor(Math.random() * colors.length)];
-      
+
       this.particles.push(
         new Particle(
-          { x: position.x, y: position.y },
+          {x: position.x, y: position.y},
           velocity,
           color,
           600 + Math.random() * 400,
@@ -508,10 +509,10 @@ export class ParticleSystem {
       const velocity = Vector2Utils.fromAngle(angle, speed);
       const colors = ["#cccccc", "#cccc99", "#cc9966"];
       const color = colors[Math.floor(Math.random() * colors.length)];
-      
+
       this.particles.push(
         new Particle(
-          { x: position.x, y: position.y },
+          {x: position.x, y: position.y},
           velocity,
           color,
           200 + Math.random() * 300,

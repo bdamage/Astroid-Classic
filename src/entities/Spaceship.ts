@@ -131,7 +131,8 @@ export class Spaceship extends GameObject {
   // Make ship temporarily invulnerable
   public makeInvulnerable(duration?: number): void {
     this.invulnerable = true;
-    this.invulnerabilityTime = duration !== undefined ? duration : this.maxInvulnerabilityTime;
+    this.invulnerabilityTime =
+      duration !== undefined ? duration : this.maxInvulnerabilityTime;
   }
 
   // Check if ship can be damaged

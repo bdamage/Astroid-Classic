@@ -155,14 +155,19 @@ export class GameManager {
     });
 
     // Check for boss wave
-    if (this.waveManager.shouldSpawnBoss() && !this.showingBossIntro && !this.boss) {
+    if (
+      this.waveManager.shouldSpawnBoss() &&
+      !this.showingBossIntro &&
+      !this.boss
+    ) {
       this.startBossIntro();
     }
 
     // Update boss intro
     if (this.showingBossIntro) {
       this.bossIntroTimer += deltaTime;
-      if (this.bossIntroTimer >= 3000) { // 3 second intro
+      if (this.bossIntroTimer >= 3000) {
+        // 3 second intro
         this.spawnBoss();
         this.showingBossIntro = false;
         this.bossIntroTimer = 0;
@@ -171,8 +176,12 @@ export class GameManager {
 
     // Update boss
     if (this.boss) {
-      this.boss.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
-      
+      this.boss.update(
+        deltaTime,
+        this.game.canvasWidth,
+        this.game.canvasHeight
+      );
+
       // Boss attacks
       if (this.boss.canAttack()) {
         this.bossAttack();
@@ -181,10 +190,10 @@ export class GameManager {
     }
 
     // Update boss projectiles
-    this.bossProjectiles.forEach(proj => {
+    this.bossProjectiles.forEach((proj) => {
       proj.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
     });
-    this.bossProjectiles = this.bossProjectiles.filter(proj => proj.active);
+    this.bossProjectiles = this.bossProjectiles.filter((proj) => proj.active);
 
     // Update enemies
     this.enemies.forEach((enemy) => {
@@ -198,7 +207,7 @@ export class GameManager {
     this.homingMissiles.forEach((missile) => {
       missile.setTargets([...this.asteroids, ...this.enemies]);
       missile.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
-      
+
       // Create missile trail particles
       const angle = Math.atan2(missile.velocity.y, missile.velocity.x);
       this.particleSystem.createMissileTrail(missile.position, angle);
@@ -226,18 +235,19 @@ export class GameManager {
     // Update power-ups
     this.powerUps.forEach((powerUp) => {
       powerUp.update(deltaTime, this.game.canvasWidth, this.game.canvasHeight);
-      
+
       // Magnet effect - attract power-ups to player
       if (this.spaceship && this.weaponSystem.hasPowerUp("magnet")) {
         const dx = this.spaceship.position.x - powerUp.position.x;
         const dy = this.spaceship.position.y - powerUp.position.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance < 300) { // Magnet range
+
+        if (distance < 300) {
+          // Magnet range
           const pullStrength = 200; // Pixels per second
           const nx = dx / distance;
           const ny = dy / distance;
-          
+
           powerUp.velocity.x += nx * pullStrength * (deltaTime / 1000);
           powerUp.velocity.y += ny * pullStrength * (deltaTime / 1000);
         }
@@ -485,30 +495,37 @@ export class GameManager {
   private activateNuke(): void {
     // Destroy all asteroids on screen
     const asteroidsDestroyed = this.asteroids.length;
-    
+
     for (const asteroid of this.asteroids) {
       // Give score for each asteroid
       const baseScore = asteroid.getScore();
       const comboMultiplier = this.game.achievements.getComboMultiplier();
-      const score = this.game.difficulty.getScoreValue(baseScore * comboMultiplier);
+      const score = this.game.difficulty.getScoreValue(
+        baseScore * comboMultiplier
+      );
       this.game.addScore(score);
-      
+
       // Create explosion effects
-      this.particleSystem.createExplosion(asteroid.position, "#ff0000", 12, "bright");
+      this.particleSystem.createExplosion(
+        asteroid.position,
+        "#ff0000",
+        12,
+        "bright"
+      );
     }
-    
+
     // Clear all asteroids
     this.asteroids = [];
-    
+
     // Massive screen shake
     this.game.shake.shake(20, 500);
-    
+
     // Play explosion sound
     this.game.sound.playSound("explosion", 1.0, 0.5);
-    
+
     // Show achievement
     this.floatingTextManager.addScoreText(
-      { x: this.game.canvasWidth / 2, y: this.game.canvasHeight / 2 },
+      {x: this.game.canvasWidth / 2, y: this.game.canvasHeight / 2},
       asteroidsDestroyed * 50
     );
   }
@@ -523,7 +540,7 @@ export class GameManager {
   private spawnBoss(): void {
     const wave = this.waveManager.getCurrentWave();
     let bossType: BossType;
-    
+
     // Cycle through boss types
     if (wave % 15 === 0) {
       bossType = BossType.FORTRESS;
@@ -532,63 +549,82 @@ export class GameManager {
     } else {
       bossType = BossType.MOTHERSHIP;
     }
-    
+
     const centerX = this.game.canvasWidth / 2;
     const centerY = this.game.canvasHeight / 2;
-    
-    this.boss = new Boss({ x: centerX, y: centerY }, bossType);
+
+    this.boss = new Boss({x: centerX, y: centerY}, bossType);
     this.waveManager.markBossSpawned();
-    
+
     // Sound and effects
     this.game.sound.playSound("levelUp", 0.8, 0.7);
     this.game.shake.shake(15, 600);
-    this.particleSystem.createExplosion({ x: centerX, y: centerY }, "#ff00ff", 30, "bright");
+    this.particleSystem.createExplosion(
+      {x: centerX, y: centerY},
+      "#ff00ff",
+      30,
+      "bright"
+    );
   }
 
   private bossAttack(): void {
     if (!this.boss) return;
-    
+
     const patterns = this.boss.getAttackPattern();
-    const color = this.boss.getType() === BossType.MOTHERSHIP ? "#ff00ff" :
-                  this.boss.getType() === BossType.FORTRESS ? "#00ffff" : "#ffff00";
-    
-    patterns.forEach(direction => {
+    const color =
+      this.boss.getType() === BossType.MOTHERSHIP
+        ? "#ff00ff"
+        : this.boss.getType() === BossType.FORTRESS
+        ? "#00ffff"
+        : "#ffff00";
+
+    patterns.forEach((direction) => {
       const projectile = new BossProjectile(
-        { x: this.boss!.position.x, y: this.boss!.position.y },
+        {x: this.boss!.position.x, y: this.boss!.position.y},
         direction,
         color
       );
       this.bossProjectiles.push(projectile);
     });
-    
+
     this.game.sound.playSound("shoot", 0.3, 0.6);
   }
 
   private bossDefeated(): void {
     if (!this.boss) return;
-    
+
     const wave = this.waveManager.getCurrentWave();
     const bossScore = 5000 * Math.floor(wave / 5);
-    
+
     // Award score
     this.game.addScore(bossScore);
-    
+
     // Epic explosion with multiple effects
-    this.particleSystem.createExplosion(this.boss.position, "#ff00ff", 50, "massive");
-    this.particleSystem.createExplosion(this.boss.position, "#00ffff", 40, "bright");
+    this.particleSystem.createExplosion(
+      this.boss.position,
+      "#ff00ff",
+      50,
+      "massive"
+    );
+    this.particleSystem.createExplosion(
+      this.boss.position,
+      "#00ffff",
+      40,
+      "bright"
+    );
     this.particleSystem.createDebris(this.boss.position, 20);
     this.particleSystem.createShockwave(this.boss.position, "#ff00ff", 60);
     this.particleSystem.createShockwave(this.boss.position, "#00ffff", 80);
     this.particleSystem.createComboBurst(this.boss.position, 50);
-    
+
     // Screen effects with freeze frame
     this.game.time.freeze(200, 0.05); // Dramatic freeze for boss defeat
     this.game.shake.shake(25, 800);
     this.game.sound.playSound("explosion", 1.0, 0.5);
-    
+
     // Show floating score
     this.floatingTextManager.addScoreText(this.boss.position, bossScore);
-    
+
     // Spawn multiple power-ups as rewards
     const powerUpCount = 2 + Math.floor(wave / 10);
     for (let i = 0; i < powerUpCount; i++) {
@@ -598,7 +634,7 @@ export class GameManager {
       const y = this.boss.position.y + Math.sin(angle) * distance;
       this.spawnPowerUpAt(x, y);
     }
-    
+
     // Clear boss
     this.boss = null;
     this.bossProjectiles = [];
@@ -719,7 +755,9 @@ export class GameManager {
         if (bullet.checkCollision(asteroid)) {
           const baseScore = asteroid.getScore();
           const comboMultiplier = this.game.achievements.getComboMultiplier();
-          const score = this.game.difficulty.getScoreValue(baseScore * comboMultiplier);
+          const score = this.game.difficulty.getScoreValue(
+            baseScore * comboMultiplier
+          );
 
           // Add score
           this.game.addScore(score);
@@ -729,7 +767,7 @@ export class GameManager {
           if (achievement) {
             this.game.achievementUI.showAchievement(achievement);
             this.game.addScore(achievement.points);
-            
+
             // Play combo milestone sound for combo achievements
             if (achievement.type === "combo") {
               this.game.sound.playSound("comboMilestone", 0.6, 1.0);
@@ -742,24 +780,34 @@ export class GameManager {
             // Play combo increase sound with pitch variation based on combo level
             const comboCount = this.game.achievements.getComboCount();
             const pitch = 1.0 + comboCount * 0.05;
-            this.game.sound.playSound("comboIncrease", 0.4, Math.min(pitch, 2.0));
-            
+            this.game.sound.playSound(
+              "comboIncrease",
+              0.4,
+              Math.min(pitch, 2.0)
+            );
+
             // Show combo text for milestones (every 5 kills)
             if (comboCount % 5 === 0 && comboCount >= 5) {
-              this.floatingTextManager.addComboText(asteroid.position, comboCount);
+              this.floatingTextManager.addComboText(
+                asteroid.position,
+                comboCount
+              );
             }
-            
+
             // Show multiplier text
             if (comboMultiplier >= 2) {
-              this.floatingTextManager.addMultiplierText(asteroid.position, comboMultiplier);
+              this.floatingTextManager.addMultiplierText(
+                asteroid.position,
+                comboMultiplier
+              );
             }
-            
+
             // Freeze frame effect for high combos (20+)
             if (comboCount >= 20 && comboCount % 5 === 0) {
               const freezeDuration = Math.min(50 + comboCount * 2, 150);
               this.game.time.freeze(freezeDuration, 0.1);
             }
-            
+
             // Screen shake scales with combo level
             const shakeIntensity = Math.min(2 + comboCount * 0.2, 10);
             const shakeDuration = Math.min(100 + comboCount * 5, 300);
@@ -782,8 +830,12 @@ export class GameManager {
           // Create explosion effect with enhanced visuals
           this.particleSystem.createExplosion(asteroid.position, "#ffffff", 6);
           this.particleSystem.createDebris(asteroid.position, 4);
-          this.particleSystem.createSparks(asteroid.position, Math.atan2(bullet.velocity.y, bullet.velocity.x), 3);
-          
+          this.particleSystem.createSparks(
+            asteroid.position,
+            Math.atan2(bullet.velocity.y, bullet.velocity.x),
+            3
+          );
+
           // Add combo burst for high combos
           const comboCount = this.game.achievements.getComboCount();
           if (comboCount >= 10) {
@@ -795,11 +847,19 @@ export class GameManager {
           if (size === "large") {
             this.game.sound.playSound("explosion", 0.6, 0.8);
             this.game.shake.shake(8, 300);
-            this.particleSystem.createShockwave(asteroid.position, "#ffffff", 25);
+            this.particleSystem.createShockwave(
+              asteroid.position,
+              "#ffffff",
+              25
+            );
           } else if (size === "medium") {
             this.game.sound.playSound("explosion", 0.5, 1.0);
             this.game.shake.shake(5, 200);
-            this.particleSystem.createShockwave(asteroid.position, "#ffffff", 15);
+            this.particleSystem.createShockwave(
+              asteroid.position,
+              "#ffffff",
+              15
+            );
           } else {
             this.game.sound.playSound("smallExplosion", 0.4, 1.2);
             this.game.shake.shake(3, 150);
@@ -837,7 +897,16 @@ export class GameManager {
           const config = powerUp.getConfig();
 
           // Handle special power-ups that don't use the weapon system
-          if (["shield", "hyperspace", "slowMotion", "nuke", "magnet", "invincibility"].includes(config.type)) {
+          if (
+            [
+              "shield",
+              "hyperspace",
+              "slowMotion",
+              "nuke",
+              "magnet",
+              "invincibility",
+            ].includes(config.type)
+          ) {
             this.handleSpecialPowerUps(config);
           } else {
             this.weaponSystem.addPowerUp(powerUp.getType(), config.duration);
@@ -864,7 +933,12 @@ export class GameManager {
             case "invincibility":
               this.game.shake.shake(6, 200);
               this.game.sound.playSound("powerUp", 0.6, 1.5);
-              this.particleSystem.createExplosion(powerUp.position, config.color, 20, "bright");
+              this.particleSystem.createExplosion(
+                powerUp.position,
+                config.color,
+                20,
+                "bright"
+              );
               break;
             case "magnet":
               this.game.shake.shake(4, 180);
@@ -872,7 +946,11 @@ export class GameManager {
               break;
             default:
               this.game.shake.shake(3, 150);
-              this.game.sound.playSound("powerUp", 0.5, 1.0 + Math.random() * 0.3);
+              this.game.sound.playSound(
+                "powerUp",
+                0.5,
+                1.0 + Math.random() * 0.3
+              );
           }
 
           // Check for power-up achievements
@@ -930,7 +1008,9 @@ export class GameManager {
             // Enemy destroyed
             const baseScore = enemy.getScore();
             const comboMultiplier = this.game.achievements.getComboMultiplier();
-            const score = this.game.difficulty.getScoreValue(baseScore * comboMultiplier);
+            const score = this.game.difficulty.getScoreValue(
+              baseScore * comboMultiplier
+            );
             this.game.addScore(score);
 
             // Check for achievements on enemy kill
@@ -938,7 +1018,7 @@ export class GameManager {
             if (achievement) {
               this.game.achievementUI.showAchievement(achievement);
               this.game.addScore(achievement.points);
-              
+
               // Play combo milestone sound for combo achievements
               if (achievement.type === "combo") {
                 this.game.sound.playSound("comboMilestone", 0.6, 1.0);
@@ -951,8 +1031,12 @@ export class GameManager {
               // Play combo increase sound with pitch variation based on combo level
               const comboCount = this.game.achievements.getComboCount();
               const pitch = 1.0 + comboCount * 0.05;
-              this.game.sound.playSound("comboIncrease", 0.4, Math.min(pitch, 2.0));
-              
+              this.game.sound.playSound(
+                "comboIncrease",
+                0.4,
+                Math.min(pitch, 2.0)
+              );
+
               // Screen shake scales with combo level
               const shakeIntensity = Math.min(2 + comboCount * 0.2, 10);
               const shakeDuration = Math.min(100 + comboCount * 5, 300);
@@ -977,13 +1061,13 @@ export class GameManager {
               enemy.position,
               enemy.getType()
             );
-            
+
             // Add combo burst for high combos
             const comboCount = this.game.achievements.getComboCount();
             if (comboCount >= 10) {
               this.particleSystem.createComboBurst(enemy.position, comboCount);
             }
-            
+
             this.game.sound.playSound(
               "explosion",
               0.5,
@@ -1004,29 +1088,42 @@ export class GameManager {
     // Boss Collisions
     if (this.boss && this.boss.active) {
       // Bullets vs Boss
-      for (let bulletIndex = this.bullets.length - 1; bulletIndex >= 0; bulletIndex--) {
+      for (
+        let bulletIndex = this.bullets.length - 1;
+        bulletIndex >= 0;
+        bulletIndex--
+      ) {
         const bullet = this.bullets[bulletIndex];
         // Check boss still exists before collision check
         if (!this.boss || !this.boss.active) break;
-        
+
         if (bullet && bullet.active && bullet.checkCollision(this.boss)) {
           const defeated = this.boss.takeDamage(10);
           this.bullets.splice(bulletIndex, 1);
-          
+
           if (defeated) {
             this.bossDefeated();
             break; // Exit loop after boss is defeated
           } else {
             // Boss hit but not defeated
-            this.particleSystem.createExplosion(bullet.position, "#ff00ff", 8, "bright");
-            this.particleSystem.createSparks(bullet.position, Math.atan2(bullet.velocity.y, bullet.velocity.x), 5);
+            this.particleSystem.createExplosion(
+              bullet.position,
+              "#ff00ff",
+              8,
+              "bright"
+            );
+            this.particleSystem.createSparks(
+              bullet.position,
+              Math.atan2(bullet.velocity.y, bullet.velocity.x),
+              5
+            );
             this.floatingTextManager.addDamageText(bullet.position, 10);
-            
+
             // Show critical text occasionally (20% chance)
             if (Math.random() < 0.2) {
               this.floatingTextManager.addCriticalText(bullet.position, true);
             }
-            
+
             this.game.sound.playSound("hit", 0.4, 1.2);
             this.game.shake.shake(4, 150);
           }
@@ -1034,7 +1131,11 @@ export class GameManager {
       }
 
       // Boss vs Spaceship
-      if (this.spaceship && this.spaceship.active && this.spaceship.canTakeDamage()) {
+      if (
+        this.spaceship &&
+        this.spaceship.active &&
+        this.spaceship.canTakeDamage()
+      ) {
         if (this.spaceship.checkCollision(this.boss)) {
           this.spaceshipDestroyed();
         }
@@ -1042,12 +1143,20 @@ export class GameManager {
     }
 
     // Boss Projectiles vs Spaceship
-    if (this.spaceship && this.spaceship.active && this.spaceship.canTakeDamage()) {
+    if (
+      this.spaceship &&
+      this.spaceship.active &&
+      this.spaceship.canTakeDamage()
+    ) {
       for (let i = this.bossProjectiles.length - 1; i >= 0; i--) {
         const projectile = this.bossProjectiles[i];
         if (projectile && projectile.active) {
           // Check spaceship still exists before collision check
-          if (this.spaceship && this.spaceship.active && this.spaceship.checkCollision(projectile)) {
+          if (
+            this.spaceship &&
+            this.spaceship.active &&
+            this.spaceship.checkCollision(projectile)
+          ) {
             this.spaceshipDestroyed();
             this.bossProjectiles.splice(i, 1);
             break; // Exit loop after spaceship destruction
@@ -1077,7 +1186,9 @@ export class GameManager {
         if (missile.checkCollision(asteroid)) {
           const baseScore = asteroid.getScore() * 2; // Bonus for homing missile
           const comboMultiplier = this.game.achievements.getComboMultiplier();
-          const score = this.game.difficulty.getScoreValue(baseScore * comboMultiplier);
+          const score = this.game.difficulty.getScoreValue(
+            baseScore * comboMultiplier
+          );
           this.game.addScore(score);
           this.floatingTextManager.addScoreText(asteroid.position, score);
           this.particleSystem.createExplosion(
@@ -1113,7 +1224,9 @@ export class GameManager {
             // Homing missiles do more damage
             const baseScore = enemy.getScore() * 2;
             const comboMultiplier = this.game.achievements.getComboMultiplier();
-            const score = this.game.difficulty.getScoreValue(baseScore * comboMultiplier);
+            const score = this.game.difficulty.getScoreValue(
+              baseScore * comboMultiplier
+            );
             this.game.addScore(score);
             this.floatingTextManager.addScoreText(enemy.position, score);
             this.particleSystem.createEnemyExplosion(
@@ -1263,7 +1376,8 @@ export class GameManager {
 
     // Render boss intro warning
     if (this.showingBossIntro) {
-      const alpha = Math.sin((this.bossIntroTimer / 3000) * Math.PI * 4) * 0.5 + 0.5;
+      const alpha =
+        Math.sin((this.bossIntroTimer / 3000) * Math.PI * 4) * 0.5 + 0.5;
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#ff0000";

@@ -1,5 +1,10 @@
 export class ScreenFlash {
-  private flashes: {color: string; alpha: number; duration: number; elapsed: number}[] = [];
+  private flashes: {
+    color: string;
+    alpha: number;
+    duration: number;
+    elapsed: number;
+  }[] = [];
 
   flash(color: string, intensity: number = 0.3, duration: number = 200): void {
     this.flashes.push({
@@ -32,7 +37,9 @@ export class ScreenFlash {
     ctx.save();
 
     for (const flash of this.flashes) {
-      ctx.fillStyle = `${flash.color}${Math.floor(flash.alpha * 255).toString(16).padStart(2, "0")}`;
+      ctx.fillStyle = `${flash.color}${Math.floor(flash.alpha * 255)
+        .toString(16)
+        .padStart(2, "0")}`;
       ctx.fillRect(0, 0, width, height);
     }
 

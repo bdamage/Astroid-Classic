@@ -28,7 +28,7 @@ export class TimeScale {
   update(deltaTime: number): void {
     if (this.freezeTimer > 0) {
       this.freezeTimer -= deltaTime;
-      
+
       if (this.freezeTimer <= 0) {
         // Freeze duration ended, transition back to normal
         this.targetScale = 1.0;
@@ -40,7 +40,7 @@ export class TimeScale {
     if (this.currentScale !== this.targetScale) {
       const diff = this.targetScale - this.currentScale;
       const step = this.transitionSpeed * (deltaTime / 1000);
-      
+
       if (Math.abs(diff) < step) {
         this.currentScale = this.targetScale;
       } else {
@@ -68,7 +68,7 @@ export class TimeScale {
    */
   setScale(scale: number, duration: number = 0): void {
     this.targetScale = Math.max(0, Math.min(2.0, scale));
-    
+
     if (duration > 0) {
       this.freezeTimer = duration;
       this.freezeDuration = duration;
@@ -97,6 +97,6 @@ export class TimeScale {
    */
   getFreezeProgress(): number {
     if (this.freezeDuration === 0) return 1;
-    return 1 - (this.freezeTimer / this.freezeDuration);
+    return 1 - this.freezeTimer / this.freezeDuration;
   }
 }

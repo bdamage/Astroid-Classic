@@ -7,7 +7,11 @@ export class BossProjectile extends GameObject {
   private lifetime: number = 5000; // 5 seconds max lifetime
   private age: number = 0;
 
-  constructor(position: Vector2, direction: Vector2, color: string = "#ff0000") {
+  constructor(
+    position: Vector2,
+    direction: Vector2,
+    color: string = "#ff0000"
+  ) {
     super(position, 6);
     this.velocity = {
       x: direction.x * this.speed,

@@ -24,18 +24,30 @@ export class FloatingText {
     type: "normal" | "damage" | "combo" | "critical" = "normal"
   ) {
     this.position = {...position};
-    
+
     // Different velocity patterns based on type
     if (type === "damage") {
-      this.velocity = { x: (Math.random() - 0.5) * 30, y: -50 - Math.random() * 30 };
+      this.velocity = {
+        x: (Math.random() - 0.5) * 30,
+        y: -50 - Math.random() * 30,
+      };
     } else if (type === "combo") {
-      this.velocity = { x: (Math.random() - 0.5) * 80, y: -60 - Math.random() * 40 };
+      this.velocity = {
+        x: (Math.random() - 0.5) * 80,
+        y: -60 - Math.random() * 40,
+      };
     } else if (type === "critical") {
-      this.velocity = { x: (Math.random() - 0.5) * 100, y: -80 - Math.random() * 50 };
+      this.velocity = {
+        x: (Math.random() - 0.5) * 100,
+        y: -80 - Math.random() * 50,
+      };
     } else {
-      this.velocity = { x: (Math.random() - 0.5) * 50, y: -30 - Math.random() * 20 };
+      this.velocity = {
+        x: (Math.random() - 0.5) * 50,
+        y: -30 - Math.random() * 20,
+      };
     }
-    
+
     this.text = text;
     this.color = color;
     this.fontSize = fontSize;
@@ -74,14 +86,15 @@ export class FloatingText {
 
     if (scaleProgress < 1) {
       // Zoom in effect (more dramatic for critical/combo)
-      const maxScale = this.type === "critical" || this.type === "combo" ? 2.5 : 2.0;
+      const maxScale =
+        this.type === "critical" || this.type === "combo" ? 2.5 : 2.0;
       const scale = 0.5 + scaleProgress * maxScale;
       this.fontSize = this.initialFontSize * scale;
     } else {
       // Return to normal size
       this.fontSize = this.initialFontSize;
     }
-    
+
     // Bounce effect for critical hits
     if (this.type === "critical") {
       this.bouncePhase += deltaTime / 100;
@@ -93,7 +106,7 @@ export class FloatingText {
 
     const alpha = Math.min(1, this.life / this.maxLife);
     let yOffset = 0;
-    
+
     // Bounce effect for critical hits
     if (this.type === "critical") {
       yOffset = Math.sin(this.bouncePhase) * 5;
@@ -120,7 +133,7 @@ export class FloatingText {
       ctx.lineWidth = 2;
       ctx.strokeText(this.text, this.position.x, this.position.y + yOffset);
     }
-    
+
     ctx.fillText(this.text, this.position.x, this.position.y + yOffset);
 
     ctx.restore();
@@ -180,15 +193,15 @@ export class FloatingTextManager {
 
   addComboText(position: Vector2, comboCount: number): void {
     const colors = [
-      "#ffff00",  // Yellow for low combos
-      "#ff9900",  // Orange
-      "#ff00ff",  // Magenta for medium
-      "#00ffff",  // Cyan for high
-      "#ffffff"   // White for extreme
+      "#ffff00", // Yellow for low combos
+      "#ff9900", // Orange
+      "#ff00ff", // Magenta for medium
+      "#00ffff", // Cyan for high
+      "#ffffff", // White for extreme
     ];
     const colorIndex = Math.min(Math.floor(comboCount / 5), colors.length - 1);
     const color = colors[colorIndex];
-    
+
     const text = new FloatingText(
       position,
       `${comboCount}x COMBO!`,
@@ -215,7 +228,7 @@ export class FloatingTextManager {
   addMultiplierText(position: Vector2, multiplier: number): void {
     const colors = ["#ffff00", "#ff9900", "#ff00ff", "#00ffff"];
     const colorIndex = Math.min(Math.floor(multiplier / 2), colors.length - 1);
-    
+
     const text = new FloatingText(
       position,
       `x${multiplier}`,

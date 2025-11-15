@@ -195,10 +195,10 @@ export class Game implements IGameContext {
   private update(deltaTime: number): void {
     // Update time scale (unaffected by time dilation)
     this.timeScale.update(deltaTime);
-    
+
     // Apply time scale to delta time for game systems
     const scaledDeltaTime = this.timeScale.applyScale(deltaTime);
-    
+
     // Update screen shake
     this.screenShake.update(scaledDeltaTime);
 

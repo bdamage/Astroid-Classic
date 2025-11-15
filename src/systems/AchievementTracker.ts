@@ -11,7 +11,7 @@ export class AchievementTracker {
   private killStreak: number = 0;
   private powerUpStreak: number = 0;
   private lastKillTime: number = 0;
-  
+
   // Combo system
   private comboCount: number = 0;
   private comboMultiplier: number = 1;
@@ -30,7 +30,8 @@ export class AchievementTracker {
     // Decay combo if no kills
     if (currentTime - this.lastComboTime > this.COMBO_TIMEOUT) {
       this.comboDecayTimer += deltaTime;
-      if (this.comboDecayTimer >= 100) { // Decay every 100ms
+      if (this.comboDecayTimer >= 100) {
+        // Decay every 100ms
         if (this.comboCount > 0) {
           this.comboCount = Math.max(0, this.comboCount - 1);
           this.updateComboMultiplier();
@@ -48,7 +49,7 @@ export class AchievementTracker {
 
     this.killStreak++;
     this.lastKillTime = currentTime;
-    
+
     // Update combo
     this.comboCount++;
     this.lastComboTime = currentTime;

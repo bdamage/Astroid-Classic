@@ -231,9 +231,10 @@ export class HUD {
 
     // Combo count and multiplier text
     this.ctx.save();
-    
+
     // Pulsing effect for high combos
-    const pulseScale = comboCount >= 15 ? 1 + Math.sin(Date.now() / 100) * 0.1 : 1;
+    const pulseScale =
+      comboCount >= 15 ? 1 + Math.sin(Date.now() / 100) * 0.1 : 1;
     this.ctx.translate(x, y);
     this.ctx.scale(pulseScale, pulseScale);
     this.ctx.translate(-x, -y);
@@ -241,14 +242,14 @@ export class HUD {
     // Main combo text
     this.ctx.font = "bold 24px Arial";
     this.ctx.textAlign = "right";
-    
+
     // Color based on combo level
     let comboColor = "#00ff00"; // Green
     if (comboCount >= 50) comboColor = "#ff00ff"; // Purple
     else if (comboCount >= 25) comboColor = "#ff0000"; // Red
     else if (comboCount >= 15) comboColor = "#ff6600"; // Orange
     else if (comboCount >= 10) comboColor = "#ffaa00"; // Yellow-orange
-    
+
     this.ctx.fillStyle = comboColor;
     this.ctx.strokeStyle = "#000000";
     this.ctx.lineWidth = 3;
