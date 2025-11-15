@@ -4,6 +4,7 @@ import {MusicManager} from "../audio/MusicManager";
 import {ScreenShake} from "../effects/ScreenShake";
 import {Starfield} from "../effects/Starfield";
 import {AchievementDisplay} from "../effects/AchievementDisplay";
+import {TimeScale} from "../effects/TimeScale";
 import {HUD} from "../ui/HUD";
 import {MenuUI} from "../ui/MenuUI";
 import {NameEntryUI} from "../ui/NameEntryUI";
@@ -88,6 +89,7 @@ export class Game implements IGameContext {
   private soundManager: SoundManager;
   private musicManager: MusicManager;
   private screenShake: ScreenShake;
+  private timeScale: TimeScale;
   private starfield: Starfield;
   private hud: HUD;
   private leaderboard: LeaderboardManager;
@@ -114,6 +116,7 @@ export class Game implements IGameContext {
     this.soundManager = new SoundManager();
     this.musicManager = new MusicManager();
     this.screenShake = new ScreenShake();
+    this.timeScale = new TimeScale();
     this.starfield = new Starfield(250); // 250 stars
     this.leaderboard = new LeaderboardManager();
     this.difficultyManager = new DifficultyManager();
@@ -190,11 +193,17 @@ export class Game implements IGameContext {
   }
 
   private update(deltaTime: number): void {
+    // Update time scale (unaffected by time dilation)
+    this.timeScale.update(deltaTime);
+    
+    // Apply time scale to delta time for game systems
+    const scaledDeltaTime = this.timeScale.applyScale(deltaTime);
+    
     // Update screen shake
-    this.screenShake.update(deltaTime);
+    this.screenShake.update(scaledDeltaTime);
 
     // Update starfield
-    this.starfield.update(deltaTime);
+    this.starfield.update(scaledDeltaTime);
 
     // Handle global input
     if (this.inputManager.isKeyPressed("Escape")) {
@@ -242,10 +251,15 @@ export class Game implements IGameContext {
       this.inputManager.isKeyPressed("Escape") ||
       this.inputManager.isKeyPressed("Enter")
     ) {
-      this.gameState = GameState.MENU;
-      this.setupMainMenu();
-      // Return to menu music
-      this.musicManager.playMenuMusic();
+      // Check if we came from a game over (has a score set)
+      if (this.score > 0) {
+        this.gameState = GameState.GAME_OVER;
+      } else {
+        this.gameState = GameState.MENU;
+        this.setupMainMenu();
+        // Return to menu music
+        this.musicManager.playMenuMusic();
+      }
     }
   }
 
@@ -268,7 +282,9 @@ export class Game implements IGameContext {
   }
 
   private updateNameEntry(deltaTime: number): void {
-    this.nameEntryUI.update(deltaTime);
+    // Use scaled delta time for UI updates
+    const scaledDeltaTime = this.timeScale.applyScale(deltaTime);
+    this.nameEntryUI.update(scaledDeltaTime);
 
     // Handle character input
     const chars = this.inputManager.getCharacterInput();
@@ -281,8 +297,10 @@ export class Game implements IGameContext {
   }
 
   private updateGame(deltaTime: number): void {
-    this.gameManager.update(deltaTime);
-    this.achievementDisplay.update(deltaTime);
+    // Use scaled delta time for game systems
+    const scaledDeltaTime = this.timeScale.applyScale(deltaTime);
+    this.gameManager.update(scaledDeltaTime);
+    this.achievementDisplay.update(scaledDeltaTime);
   }
 
   private updateGameOver(): void {
@@ -423,6 +441,9 @@ export class Game implements IGameContext {
       waveManager: this.gameManager.currentWaveManager,
       shieldHealth: this.gameManager.shieldHealth,
       maxShieldHealth: this.gameManager.maxShieldHealth,
+      comboCount: this.achievementTracker.getComboCount(),
+      comboMultiplier: this.achievementTracker.getComboMultiplier(),
+      comboProgress: this.achievementTracker.getComboProgress(),
     });
   }
 
@@ -474,7 +495,10 @@ export class Game implements IGameContext {
             this.gameManager.currentWave,
             name
           );
-          this.gameState = GameState.GAME_OVER;
+          // Show leaderboard after name entry
+          this.showLeaderboard();
+          // Play game over music
+          this.musicManager.playGameOverMusic();
         },
         () => {
           // Skip name entry
@@ -483,7 +507,8 @@ export class Game implements IGameContext {
             this.gameManager.currentWave,
             "Anonymous"
           );
-          this.gameState = GameState.GAME_OVER;
+          // Show leaderboard after skipping
+          this.showLeaderboard();
           // Play game over music
           this.musicManager.playGameOverMusic();
         }
@@ -518,6 +543,10 @@ export class Game implements IGameContext {
 
   public get shake(): ScreenShake {
     return this.screenShake;
+  }
+
+  public get time(): TimeScale {
+    return this.timeScale;
   }
 
   public get achievements(): AchievementTracker {

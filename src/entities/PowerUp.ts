@@ -11,6 +11,9 @@ export const PowerUpType = {
   HYPERSPACE: "hyperspace",
   SLOW_MOTION: "slowMotion",
   HOMING_MISSILE: "homingMissile",
+  NUKE: "nuke",
+  MAGNET: "magnet",
+  INVINCIBILITY: "invincibility",
 } as const;
 
 export type PowerUpType = (typeof PowerUpType)[keyof typeof PowerUpType];
@@ -88,6 +91,30 @@ export const POWER_UP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     symbol: "◆",
     duration: 30000, // 30 seconds (3 missiles)
     description: "Launch seeking missiles",
+  },
+  [PowerUpType.NUKE]: {
+    type: PowerUpType.NUKE,
+    name: "Nuke",
+    color: "#ff0000",
+    symbol: "☢",
+    duration: 0, // Instant use
+    description: "Destroys all asteroids on screen",
+  },
+  [PowerUpType.MAGNET]: {
+    type: PowerUpType.MAGNET,
+    name: "Magnet",
+    color: "#00ddff",
+    symbol: "⚡",
+    duration: 12000, // 12 seconds
+    description: "Attracts nearby power-ups",
+  },
+  [PowerUpType.INVINCIBILITY]: {
+    type: PowerUpType.INVINCIBILITY,
+    name: "Invincibility",
+    color: "#ffdd00",
+    symbol: "★",
+    duration: 8000, // 8 seconds
+    description: "Complete invulnerability",
   },
 };
 

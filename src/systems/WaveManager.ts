@@ -20,6 +20,8 @@ export class WaveManager {
   private currentSpawnGroup: number = 0;
   private enemiesSpawnedInGroup: number = 0;
   private currentWaveConfig: WaveConfig | null = null;
+  private isBossWave: boolean = false;
+  private bossSpawned: boolean = false;
 
   constructor() {
     this.generateWaveConfig(1);
@@ -138,6 +140,8 @@ export class WaveManager {
 
   startWave(waveNumber: number): void {
     this.currentWave = waveNumber;
+    this.isBossWave = waveNumber % 5 === 0; // Boss every 5 waves
+    this.bossSpawned = false;
     this.generateWaveConfig(waveNumber);
     this.isWaveActive = true;
     this.spawnTimer = 0;
@@ -286,6 +290,18 @@ export class WaveManager {
 
   getTotalEnemiesInWave(): number {
     return this.currentWaveConfig?.totalEnemies ?? 0;
+  }
+
+  isBossWaveActive(): boolean {
+    return this.isBossWave;
+  }
+
+  shouldSpawnBoss(): boolean {
+    return this.isBossWave && !this.bossSpawned;
+  }
+
+  markBossSpawned(): void {
+    this.bossSpawned = true;
   }
 
   getWaveProgress(): number {

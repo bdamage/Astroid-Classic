@@ -23,6 +23,9 @@ export class HUD {
     waveManager: WaveManager;
     shieldHealth?: number;
     maxShieldHealth?: number;
+    comboCount?: number;
+    comboMultiplier?: number;
+    comboProgress?: number;
   }): void {
     // Top-left: Score and Lives
     this.renderScoreAndLives(gameData.score, gameData.lives);
@@ -32,6 +35,20 @@ export class HUD {
 
     // Top-right: Active power-ups
     this.renderActivePowerUps(gameData.weaponSystem);
+
+    // Center-right: Combo display (if active)
+    if (
+      gameData.comboCount !== undefined &&
+      gameData.comboMultiplier !== undefined &&
+      gameData.comboProgress !== undefined &&
+      gameData.comboCount >= 3
+    ) {
+      this.renderComboDisplay(
+        gameData.comboCount,
+        gameData.comboMultiplier,
+        gameData.comboProgress
+      );
+    }
 
     // Bottom-left: Shield status (if active)
     if (
@@ -202,6 +219,78 @@ export class HUD {
     }
 
     this.ctx.restore();
+  }
+
+  private renderComboDisplay(
+    comboCount: number,
+    comboMultiplier: number,
+    comboProgress: number
+  ): void {
+    const x = this.canvas.width - 200;
+    const y = 200;
+
+    // Combo count and multiplier text
+    this.ctx.save();
+    
+    // Pulsing effect for high combos
+    const pulseScale = comboCount >= 15 ? 1 + Math.sin(Date.now() / 100) * 0.1 : 1;
+    this.ctx.translate(x, y);
+    this.ctx.scale(pulseScale, pulseScale);
+    this.ctx.translate(-x, -y);
+
+    // Main combo text
+    this.ctx.font = "bold 24px Arial";
+    this.ctx.textAlign = "right";
+    
+    // Color based on combo level
+    let comboColor = "#00ff00"; // Green
+    if (comboCount >= 50) comboColor = "#ff00ff"; // Purple
+    else if (comboCount >= 25) comboColor = "#ff0000"; // Red
+    else if (comboCount >= 15) comboColor = "#ff6600"; // Orange
+    else if (comboCount >= 10) comboColor = "#ffaa00"; // Yellow-orange
+    
+    this.ctx.fillStyle = comboColor;
+    this.ctx.strokeStyle = "#000000";
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeText(`COMBO x${comboCount}`, x, y);
+    this.ctx.fillText(`COMBO x${comboCount}`, x, y);
+
+    // Multiplier badge
+    this.ctx.font = "bold 18px Arial";
+    this.ctx.fillStyle = "#ffff00";
+    this.ctx.strokeText(`${comboMultiplier.toFixed(1)}x SCORE`, x, y + 25);
+    this.ctx.fillText(`${comboMultiplier.toFixed(1)}x SCORE`, x, y + 25);
+
+    this.ctx.restore();
+
+    // Progress bar
+    const barWidth = 150;
+    const barHeight = 8;
+    const barX = x - barWidth;
+    const barY = y + 35;
+
+    // Background
+    this.ctx.fillStyle = "rgba(50, 50, 50, 0.8)";
+    this.ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Progress fill - color transitions from green to yellow to red
+    const progress = comboProgress;
+    let progressColor;
+    if (progress > 0.6) {
+      progressColor = "#00ff00"; // Green
+    } else if (progress > 0.3) {
+      progressColor = "#ffff00"; // Yellow
+    } else {
+      progressColor = "#ff0000"; // Red
+    }
+
+    this.ctx.fillStyle = progressColor;
+    this.ctx.fillRect(barX, barY, barWidth * progress, barHeight);
+
+    // Border
+    this.ctx.strokeStyle = "#ffffff";
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(barX, barY, barWidth, barHeight);
   }
 
   private renderShieldStatus(health: number, maxHealth: number): void {

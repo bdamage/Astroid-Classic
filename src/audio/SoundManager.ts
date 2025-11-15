@@ -51,6 +51,9 @@ export class SoundManager {
     this.createShieldSound();
     this.createHyperspaceSound();
     this.createSlowMotionSound();
+    this.createComboIncreaseSound();
+    this.createComboMilestoneSound();
+    this.createComboBreakSound();
   }
 
   private createShootSound(): void {
@@ -641,5 +644,75 @@ export class SoundManager {
     }
 
     this.sounds.set("slowMotion", buffer);
+  }
+
+  private createComboIncreaseSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.2;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Rising pitch chime (200-600Hz)
+      const freq = 200 + (t / duration) * 400;
+      const envelope = Math.exp(-t * 10); // Fast decay
+
+      data[i] = Math.sin(2 * Math.PI * freq * t) * envelope * 0.3;
+    }
+
+    this.sounds.set("comboIncrease", buffer);
+  }
+
+  private createComboMilestoneSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.4;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Triumphant burst with harmonics
+      const baseFreq = 440;
+      const tone1 = Math.sin(2 * Math.PI * baseFreq * t);
+      const tone2 = Math.sin(2 * Math.PI * baseFreq * 1.5 * t) * 0.5;
+      const tone3 = Math.sin(2 * Math.PI * baseFreq * 2 * t) * 0.3;
+
+      const envelope = Math.exp(-t * 5);
+
+      data[i] = (tone1 + tone2 + tone3) * envelope * 0.3;
+    }
+
+    this.sounds.set("comboMilestone", buffer);
+  }
+
+  private createComboBreakSound(): void {
+    if (!this.audioContext) return;
+
+    const sampleRate = this.audioContext.sampleRate;
+    const duration = 0.3;
+    const length = sampleRate * duration;
+    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+
+      // Descending "deflate" sound (600-100Hz)
+      const freq = 600 - (t / duration) * 500;
+      const envelope = 1 - t / duration; // Linear fade
+
+      data[i] = Math.sin(2 * Math.PI * freq * t) * envelope * 0.25;
+    }
+
+    this.sounds.set("comboBreak", buffer);
   }
 }

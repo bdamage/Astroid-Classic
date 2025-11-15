@@ -14,12 +14,22 @@ export interface IGameContext {
   shake: {
     shake(intensity: number, duration: number): void;
   };
+  time: {
+    freeze(duration: number, scale?: number): void;
+    setScale(scale: number, duration?: number): void;
+    reset(): void;
+    getScale(): number;
+  };
   achievements: {
+    update(deltaTime: number, currentTime: number): void;
     onKill(currentTime: number): any;
     onPowerUpCollected(): any;
     onWaveCleared(waveNumber: number): any;
     resetStreaks(): void;
     getCurrentKillStreak(): number;
+    getComboCount(): number;
+    getComboMultiplier(): number;
+    getComboProgress(): number;
   };
   achievementUI: {
     showAchievement(achievement: any): void;
