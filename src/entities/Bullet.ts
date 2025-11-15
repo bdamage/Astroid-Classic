@@ -30,8 +30,16 @@ export class Bullet extends GameObject {
     );
     this.position = Vector2Utils.add(this.position, deltaVelocity);
 
-    // Wrap around screen (bullets wrap like everything else)
-    this.wrapPosition(canvasWidth, canvasHeight);
+    // Remove bullet if it goes out of screen bounds
+    if (
+      this.position.x < -this.radius ||
+      this.position.x > canvasWidth + this.radius ||
+      this.position.y < -this.radius ||
+      this.position.y > canvasHeight + this.radius
+    ) {
+      this.destroy();
+      return;
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {

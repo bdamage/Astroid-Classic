@@ -13,7 +13,7 @@ export class AchievementTracker {
   private lastKillTime: number = 0;
 
   // Streak thresholds
-  private readonly KILL_STREAK_THRESHOLDS = [3, 5, 8, 12, 20, 30];
+  private readonly KILL_STREAK_THRESHOLDS = [10, 20, 30, 50, 80, 100];
   private readonly POWER_UP_STREAK_THRESHOLDS = [3, 5, 8];
   private readonly STREAK_TIMEOUT = 5000; // 5 seconds
 
@@ -89,12 +89,12 @@ export class AchievementTracker {
 
   private createKillStreakAchievement(streak: number): Achievement {
     const titles = {
-      3: "KILLING SPREE!",
-      5: "RAMPAGE!",
-      8: "DOMINATING!",
-      12: "UNSTOPPABLE!",
-      20: "GODLIKE!",
-      30: "LEGENDARY!",
+      10: "KILLING SPREE!",
+      20: "RAMPAGE!",
+      30: "DOMINATING!",
+      50: "UNSTOPPABLE!",
+      80: "GODLIKE!",
+      100: "LEGENDARY!",
     };
 
     const colors = {
