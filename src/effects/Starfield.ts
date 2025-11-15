@@ -39,14 +39,14 @@ export class Starfield {
 
     for (let i = 0; i < count; i++) {
       const isSparkle = Math.random() < 0.05; // 5% chance for sparkle stars
-      
+
       // Generate stars in a wider 3D sphere that extends beyond borders
       const x = (Math.random() - 0.5) * this.canvasWidth * 1.5;
       const y = (Math.random() - 0.5) * this.canvasHeight * 1.5;
       const z = (Math.random() - 0.5) * depth * 0.8;
-      
+
       const star: Star = {
-        position: { x: centerX + x, y: centerY + y },
+        position: {x: centerX + x, y: centerY + y},
         z: z,
         originalX: x,
         originalY: y,
@@ -90,12 +90,12 @@ export class Starfield {
 
   update(deltaTime: number): void {
     this.time += deltaTime / 1000;
-    
+
     // Update rotation angles
     this.rotationX += this.rotationSpeedX * (deltaTime / 1000);
     this.rotationY += this.rotationSpeedY * (deltaTime / 1000);
     this.rotationZ += this.rotationSpeedZ * (deltaTime / 1000);
-    
+
     const centerX = this.canvasWidth / 2;
     const centerY = this.canvasHeight / 2;
 
@@ -107,12 +107,12 @@ export class Starfield {
       if (star.isSparkle) {
         star.sparklePhase += 3 * (deltaTime / 1000);
       }
-      
+
       // Apply 3D rotation
       let x = star.originalX;
       let y = star.originalY;
       let z = star.originalZ;
-      
+
       // Rotate around X-axis
       const cosX = Math.cos(this.rotationX);
       const sinX = Math.sin(this.rotationX);
@@ -120,7 +120,7 @@ export class Starfield {
       const z1 = y * sinX + z * cosX;
       y = y1;
       z = z1;
-      
+
       // Rotate around Y-axis
       const cosY = Math.cos(this.rotationY);
       const sinY = Math.sin(this.rotationY);
@@ -128,7 +128,7 @@ export class Starfield {
       const z2 = -x * sinY + z * cosY;
       x = x1;
       z = z2;
-      
+
       // Rotate around Z-axis
       const cosZ = Math.cos(this.rotationZ);
       const sinZ = Math.sin(this.rotationZ);
@@ -136,7 +136,7 @@ export class Starfield {
       const y2 = x * sinZ + y * cosZ;
       x = x2;
       y = y2;
-      
+
       // Update star position with rotation
       star.position.x = centerX + x;
       star.position.y = centerY + y;
@@ -146,7 +146,7 @@ export class Starfield {
 
   render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    
+
     // Sort stars by Z-depth (far to near) for proper layering
     const sortedStars = [...this.stars].sort((a, b) => a.z - b.z);
 
@@ -155,11 +155,12 @@ export class Starfield {
       const depth = Math.max(this.canvasWidth, this.canvasHeight);
       const perspective = 1 + (star.z / depth) * 0.5; // Stars closer = bigger
       const scaledSize = star.size * perspective;
-      
+
       // Calculate current brightness with twinkling and depth
       const twinkle = (Math.sin(star.twinklePhase) + 1) * 0.5; // 0 to 1
       const depthFade = 0.3 + perspective * 0.7; // Far stars dimmer
-      const currentBrightness = star.brightness * (0.3 + twinkle * 0.7) * depthFade;
+      const currentBrightness =
+        star.brightness * (0.3 + twinkle * 0.7) * depthFade;
 
       ctx.globalAlpha = currentBrightness;
       ctx.fillStyle = star.color;
@@ -178,7 +179,11 @@ export class Starfield {
     ctx.restore();
   }
 
-  private drawSparkle(ctx: CanvasRenderingContext2D, star: Star, scaledSize?: number): void {
+  private drawSparkle(
+    ctx: CanvasRenderingContext2D,
+    star: Star,
+    scaledSize?: number
+  ): void {
     const sparkleIntensity = (Math.sin(star.sparklePhase) + 1) * 0.5;
     const centerX = star.position.x;
     const centerY = star.position.y;
@@ -238,16 +243,16 @@ export class Starfield {
     const centerX = this.canvasWidth / 2;
     const centerY = this.canvasHeight / 2;
     const depth = Math.max(this.canvasWidth, this.canvasHeight);
-    
+
     for (let i = 0; i < count; i++) {
       const isSparkle = Math.random() < 0.05;
-      
+
       const x = (Math.random() - 0.5) * this.canvasWidth * 1.5;
       const y = (Math.random() - 0.5) * this.canvasHeight * 1.5;
       const z = (Math.random() - 0.5) * depth * 0.8;
-      
+
       const star: Star = {
-        position: { x: centerX + x, y: centerY + y },
+        position: {x: centerX + x, y: centerY + y},
         z: z,
         originalX: x,
         originalY: y,
