@@ -38,7 +38,7 @@ export class Starfield {
     const depth = Math.max(this.canvasWidth, this.canvasHeight);
 
     for (let i = 0; i < count; i++) {
-      const isSparkle = Math.random() < 0.05; // 5% chance for sparkle stars
+      const isSparkle = Math.random() < 0.02; // 2% chance for sparkle stars (reduced from 5%)
 
       // Generate stars in a wider 3D sphere that extends beyond borders
       const x = (Math.random() - 0.5) * this.canvasWidth * 1.5;
@@ -105,7 +105,7 @@ export class Starfield {
 
       // Update sparkle phase for special stars
       if (star.isSparkle) {
-        star.sparklePhase += 3 * (deltaTime / 1000);
+        star.sparklePhase += 1.5 * (deltaTime / 1000); // Slower sparkle animation
       }
 
       // Apply 3D rotation
@@ -188,18 +188,18 @@ export class Starfield {
     const centerX = star.position.x;
     const centerY = star.position.y;
     const baseSize = scaledSize || star.size;
-    const size = baseSize * (1 + sparkleIntensity * 0.5);
+    const size = baseSize * (1 + sparkleIntensity * 0.3); // Reduced from 0.5
 
     // Draw center
     ctx.beginPath();
     ctx.arc(centerX, centerY, size * 0.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw sparkle rays
-    const rayLength = size * 2;
-    const rayWidth = 0.5;
+    // Draw sparkle rays - shorter and more subtle
+    const rayLength = size * 1.2; // Reduced from 2
+    const rayWidth = 0.3; // Reduced from 0.5
 
-    ctx.globalAlpha *= sparkleIntensity;
+    ctx.globalAlpha *= sparkleIntensity * 0.5; // More subtle
 
     // Draw 4 rays (cross pattern)
     for (let i = 0; i < 4; i++) {
@@ -215,13 +215,13 @@ export class Starfield {
       ctx.stroke();
     }
 
-    // Draw diagonal rays (smaller)
-    ctx.globalAlpha *= 0.7;
+    // Draw diagonal rays (smaller and more subtle)
+    ctx.globalAlpha *= 0.5; // Reduced from 0.7
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2 + Math.PI / 4;
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
-      const smallRayLength = rayLength * 0.6;
+      const smallRayLength = rayLength * 0.5; // Reduced from 0.6
 
       ctx.beginPath();
       ctx.moveTo(
@@ -232,7 +232,7 @@ export class Starfield {
         centerX + cos * smallRayLength,
         centerY + sin * smallRayLength
       );
-      ctx.lineWidth = rayWidth * 0.7;
+      ctx.lineWidth = rayWidth * 0.5; // Reduced from 0.7
       ctx.strokeStyle = star.color;
       ctx.stroke();
     }

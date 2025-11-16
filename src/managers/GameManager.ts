@@ -49,6 +49,28 @@ export class GameManager {
     this.waveManager.startWave(1); // Start the first enemy wave
   }
 
+  public completeWarpTunnel(): void {
+    // Show completion message
+    const centerX = this.game.canvasWidth / 2;
+    const centerY = this.game.canvasHeight / 2;
+    const bonus = 1000 * this.game.level;
+
+    this.floatingTextManager.addLevelText(
+      {x: centerX, y: centerY - 50},
+      this.game.level
+    );
+    this.floatingTextManager.addBonusText({x: centerX, y: centerY + 50}, bonus);
+
+    // Play level up sound
+    this.game.sound.playSound("levelUp", 0.5);
+
+    // Spawn asteroids for next wave
+    this.spawnInitialAsteroids();
+
+    // Give player bonus points for completing level
+    this.game.addScore(bonus);
+  }
+
   private resetGame(): void {
     this.spaceship = null;
     this.asteroids = [];
@@ -1334,6 +1356,13 @@ export class GameManager {
 
   private nextLevel(): void {
     this.game.level++;
+
+    // Check if this is a warp tunnel level (every 3rd level)
+    if (this.game.level % 3 === 0) {
+      // Enter warp tunnel bonus stage
+      this.game.enterWarpTunnel();
+      return;
+    }
 
     // Add level up effects
     const centerX = this.game.canvasWidth / 2;

@@ -5,6 +5,7 @@ import {ScreenShake} from "../effects/ScreenShake";
 import {Starfield} from "../effects/Starfield";
 import {AchievementDisplay} from "../effects/AchievementDisplay";
 import {TimeScale} from "../effects/TimeScale";
+import {WarpTunnel} from "../effects/WarpTunnel";
 import {HUD} from "../ui/HUD";
 import {MenuUI} from "../ui/MenuUI";
 import {NameEntryUI} from "../ui/NameEntryUI";
@@ -90,6 +91,7 @@ export class Game implements IGameContext {
   private musicManager: MusicManager;
   private screenShake: ScreenShake;
   private timeScale: TimeScale;
+  private warpTunnel: WarpTunnel;
   private starfield: Starfield;
   private hud: HUD;
   private leaderboard: LeaderboardManager;
@@ -117,6 +119,7 @@ export class Game implements IGameContext {
     this.musicManager = new MusicManager();
     this.screenShake = new ScreenShake();
     this.timeScale = new TimeScale();
+    this.warpTunnel = new WarpTunnel();
     this.starfield = new Starfield(250); // 250 stars
     this.leaderboard = new LeaderboardManager();
     this.difficultyManager = new DifficultyManager();
@@ -221,6 +224,9 @@ export class Game implements IGameContext {
       case GameState.PLAYING:
         this.updateGame(deltaTime);
         break;
+      case GameState.WARP_TUNNEL:
+        this.updateWarpTunnel(scaledDeltaTime);
+        break;
       case GameState.GAME_OVER:
         this.updateGameOver();
         break;
@@ -301,6 +307,62 @@ export class Game implements IGameContext {
     const scaledDeltaTime = this.timeScale.applyScale(deltaTime);
     this.gameManager.update(scaledDeltaTime);
     this.achievementDisplay.update(scaledDeltaTime);
+
+    // Debug key: Shift+W to enter warp tunnel
+    if (
+      this.inputManager.isKeyPressed("KeyW") &&
+      this.inputManager.isKeyDown("ShiftLeft")
+    ) {
+      this.enterWarpTunnel();
+    }
+  }
+
+  private updateWarpTunnel(deltaTime: number): void {
+    // Handle player movement (WASD or Arrow keys)
+    let moveX = 0;
+    let moveY = 0;
+
+    if (
+      this.inputManager.isKeyDown("KeyW") ||
+      this.inputManager.isKeyDown("ArrowUp")
+    ) {
+      moveY = -1;
+    }
+    if (
+      this.inputManager.isKeyDown("KeyS") ||
+      this.inputManager.isKeyDown("ArrowDown")
+    ) {
+      moveY = 1;
+    }
+    if (
+      this.inputManager.isKeyDown("KeyA") ||
+      this.inputManager.isKeyDown("ArrowLeft")
+    ) {
+      moveX = -1;
+    }
+    if (
+      this.inputManager.isKeyDown("KeyD") ||
+      this.inputManager.isKeyDown("ArrowRight")
+    ) {
+      moveX = 1;
+    }
+
+    // Update warp tunnel
+    this.warpTunnel.update(deltaTime, {x: moveX, y: moveY});
+
+    // Check if warp tunnel is complete
+    if (this.warpTunnel.isComplete()) {
+      // Award score from tunnel
+      const tunnelScore = this.warpTunnel.getScore();
+      this.addScore(tunnelScore);
+
+      // Return to normal gameplay
+      this.gameState = GameState.PLAYING;
+      this.warpTunnel.reset();
+
+      // Complete warp tunnel and spawn next wave
+      this.gameManager.completeWarpTunnel();
+    }
   }
 
   private updateGameOver(): void {
@@ -335,6 +397,9 @@ export class Game implements IGameContext {
         break;
       case GameState.PLAYING:
         this.renderGame();
+        break;
+      case GameState.WARP_TUNNEL:
+        this.warpTunnel.render(this.ctx, this.canvas.width, this.canvas.height);
         break;
       case GameState.PAUSED:
         this.renderGame();
@@ -477,6 +542,11 @@ export class Game implements IGameContext {
 
   public get state(): GameState {
     return this.gameState;
+  }
+
+  public enterWarpTunnel(): void {
+    this.warpTunnel.reset();
+    this.gameState = GameState.WARP_TUNNEL;
   }
 
   public gameOver(): void {

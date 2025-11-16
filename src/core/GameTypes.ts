@@ -40,6 +40,7 @@ export interface IGameContext {
   addScore(points: number): void;
   loseLife(): void;
   gameOver(): void;
+  enterWarpTunnel(): void;
   difficulty: {
     getCurrentSettings(): any;
     getAsteroidSpeed(baseSpeed: number): number;
@@ -53,6 +54,7 @@ export interface IGameContext {
 export const GameState = {
   MENU: "menu",
   PLAYING: "playing",
+  WARP_TUNNEL: "warp_tunnel",
   GAME_OVER: "game_over",
   PAUSED: "paused",
   LEADERBOARD: "leaderboard",
